@@ -17,6 +17,12 @@
     },
     {
       "path": "./packages/database"
+    },
+    {
+      "path": "./packages/shared-types"
+    },
+    {
+      "path": "./packages/validation"
     }
   ]
 }
