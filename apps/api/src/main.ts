@@ -1,5 +1,4 @@
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -10,8 +9,10 @@ import { AppModule } from './app/app.module.js';
 async function bootstrap() {
   // The root .env is the single source of truth (see .env.example); load
   // it explicitly since this app doesn't otherwise run from the repo root.
-  const dirname = path.dirname(fileURLToPath(import.meta.url));
-  loadDotenv({ path: path.join(dirname, '..', '..', '..', '.env') });
+  // This app's build output is CommonJS (see webpack.config.cjs), so
+  // `__dirname` is available natively — no need for the ESM
+  // `import.meta.url` dance.
+  loadDotenv({ path: path.join(__dirname, '..', '..', '..', '.env') });
 
   const { API_PORT } = loadEnv(process.env, ['API_PORT']);
 
