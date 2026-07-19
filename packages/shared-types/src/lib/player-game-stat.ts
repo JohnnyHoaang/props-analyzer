@@ -1,3 +1,5 @@
+import type { PlayerDto } from './player.js';
+
 export interface PlayerGameStatDto {
   id: string;
   playerId: string;
@@ -38,4 +40,9 @@ export interface PlayerGameLogEntryDto extends PlayerGameStatDto {
   };
   opponentTeamId: string;
   isHome: boolean;
+}
+
+/** Response entry shape for `GET /games/:id/players` (the box score). */
+export interface GameBoxScoreEntryDto extends PlayerGameStatDto {
+  player: PlayerDto;
 }

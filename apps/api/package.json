@@ -2,6 +2,7 @@
   "name": "@props-analyzer/api",
   "version": "0.0.1",
   "private": true,
+  "type": "module",
   "nx": {
     "targets": {
       "build": {
@@ -86,9 +87,19 @@
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
+    "@nestjs/swagger": "^11.4.6",
+    "@prisma/client": "6.19.3",
+    "@props-analyzer/configuration": "workspace:*",
+    "@props-analyzer/database": "workspace:*",
+    "@props-analyzer/shared-types": "workspace:*",
+    "@props-analyzer/validation": "workspace:*",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
+    "dotenv": "^17.4.2",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.0",
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@nestjs/testing": "^11.0.0"
