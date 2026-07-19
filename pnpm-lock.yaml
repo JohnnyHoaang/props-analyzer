@@ -254,6 +254,15 @@ importers:
         specifier: ^4.3.3
         version: 4.3.3
 
+  packages/api-client:
+    dependencies:
+      '@props-analyzer/shared-types':
+        specifier: workspace:*
+        version: link:../shared-types
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
+
   packages/configuration:
     dependencies:
       tslib:

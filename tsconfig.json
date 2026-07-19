@@ -23,6 +23,9 @@
     },
     {
       "path": "./packages/validation"
+    },
+    {
+      "path": "./packages/api-client"
     }
   ]
 }
