@@ -5,3 +5,4 @@ export * from './lib/player.js';
 export * from './lib/season.js';
 export * from './lib/game.js';
 export * from './lib/player-game-stat.js';
+export * from './lib/prop.js';

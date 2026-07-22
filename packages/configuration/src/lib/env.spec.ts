@@ -20,9 +20,16 @@ describe('loadEnv', () => {
     expect(env.API_PORT).toBe(3333);
   });
 
-  it('throws a readable error when a required key is missing', () => {
-    expect(() => loadEnv({}, ['DATABASE_URL'])).toThrow(
-      /DATABASE_URL/
-    );
+  it('throws a readable error when postgres mode lacks DATABASE_URL', () => {
+    expect(() =>
+      loadEnv({ DATA_SOURCE: 'postgres' }, ['DATA_SOURCE', 'DATABASE_URL'])
+    ).toThrow(/DATABASE_URL/);
+  });
+
+  it('defaults DATA_SOURCE to mock so DATABASE_URL is optional', () => {
+    const env = loadEnv({}, ['DATA_SOURCE', 'API_PORT']);
+
+    expect(env.DATA_SOURCE).toBe('mock');
+    expect(env.API_PORT).toBe(3333);
   });
 });

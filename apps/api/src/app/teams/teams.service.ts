@@ -1,14 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { TeamDto } from '@props-analyzer/shared-types';
-import { PrismaService } from '../database/prisma.service.js';
+import type { DataClient } from '@props-analyzer/database';
+import { DATA_CLIENT } from '../database/data-client.token.js';
 import { toTeamDto } from './teams.mapper.js';
 
 @Injectable()
 export class TeamsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(DATA_CLIENT) private readonly db: DataClient) {}
 
   async findAll(): Promise<TeamDto[]> {
-    const teams = await this.prisma.client.team.findMany({
+    const teams = await this.db.team.findMany({
       orderBy: { name: 'asc' },
     });
 
@@ -16,7 +17,7 @@ export class TeamsService {
   }
 
   async findById(id: string): Promise<TeamDto> {
-    const team = await this.prisma.client.team.findUnique({ where: { id } });
+    const team = await this.db.team.findUnique({ where: { id } });
 
     if (!team) {
       throw new NotFoundException(`Team ${id} not found`);

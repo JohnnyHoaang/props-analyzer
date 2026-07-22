@@ -36,4 +36,12 @@ export class PlayersController {
   ) {
     return this.playersService.findGameLog(id, query);
   }
+
+  @Get(':id/props')
+  @ApiOperation({
+    summary: "A player's prop markets, each with its per-game series",
+  })
+  findProps(@Param('id') id: string) {
+    return this.playersService.findProps(id);
+  }
 }

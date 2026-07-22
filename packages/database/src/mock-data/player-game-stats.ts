@@ -1,5 +1,6 @@
 import { gameFixtures } from './games.js';
 import { playerFixtures, type PlayerFixture } from './players.js';
+import { hashString, mulberry32, randInt } from './random.js';
 
 export interface PlayerGameStatFixture {
   playerId: string;
@@ -115,32 +116,6 @@ const ARCHETYPES: Record<PlayerFixture['position'], Archetype> = {
     fouls: [2, 5],
   },
 };
-
-/** Deterministic PRNG (mulberry32) so re-seeding always produces the same
- * box scores — no flaky snapshots, no need to persist a random seed. */
-function mulberry32(seed: number) {
-  let state = seed;
-  return () => {
-    state |= 0;
-    state = (state + 0x6d2b79f5) | 0;
-    let t = Math.imul(state ^ (state >>> 15), 1 | state);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function hashString(value: string): number {
-  let hash = 0;
-  for (let i = 0; i < value.length; i++) {
-    hash = (hash << 5) - hash + value.charCodeAt(i);
-    hash |= 0;
-  }
-  return hash;
-}
-
-function randInt(rng: () => number, [min, max]: [number, number]): number {
-  return min + Math.floor(rng() * (max - min + 1));
-}
 
 function generateStatLine(
   player: PlayerFixture,

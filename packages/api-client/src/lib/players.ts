@@ -1,6 +1,7 @@
 import type {
   PlayerGameLogEntryDto,
   PlayerPosition,
+  PropLineDto,
   PlayerWithTeamDto,
 } from '@props-analyzer/shared-types';
 import { apiFetch, type ApiRequestOptions } from './http.js';
@@ -47,5 +48,16 @@ export function getPlayerGameLog(
   return apiFetch<PlayerGameLogEntryDto[]>(
     `/players/${encodeURIComponent(id)}/game-log`,
     { ...rest, query: { limit } }
+  );
+}
+
+/** `GET /players/:id/props` */
+export function getPlayerProps(
+  id: string,
+  options?: ApiRequestOptions
+): Promise<PropLineDto[]> {
+  return apiFetch<PropLineDto[]>(
+    `/players/${encodeURIComponent(id)}/props`,
+    options
   );
 }

@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../database/prisma.service.js';
+import { DATA_CLIENT } from '../database/data-client.token.js';
 import { TeamsService } from './teams.service.js';
 
 describe('TeamsService', () => {
@@ -16,12 +16,10 @@ describe('TeamsService', () => {
     updatedAt: now,
   };
 
-  const prismaMock = {
-    client: {
-      team: {
-        findMany: jest.fn(),
-        findUnique: jest.fn(),
-      },
+  const dbMock = {
+    team: {
+      findMany: jest.fn(),
+      findUnique: jest.fn(),
     },
   };
 
@@ -29,10 +27,7 @@ describe('TeamsService', () => {
     jest.clearAllMocks();
 
     const moduleRef = await Test.createTestingModule({
-      providers: [
-        TeamsService,
-        { provide: PrismaService, useValue: prismaMock },
-      ],
+      providers: [TeamsService, { provide: DATA_CLIENT, useValue: dbMock }],
     }).compile();
 
     service = moduleRef.get(TeamsService);
@@ -40,11 +35,11 @@ describe('TeamsService', () => {
 
   describe('findAll', () => {
     it('maps Prisma teams to TeamDto, sorted by name', async () => {
-      prismaMock.client.team.findMany.mockResolvedValue([mockTeam]);
+      dbMock.team.findMany.mockResolvedValue([mockTeam]);
 
       const result = await service.findAll();
 
-      expect(prismaMock.client.team.findMany).toHaveBeenCalledWith({
+      expect(dbMock.team.findMany).toHaveBeenCalledWith({
         orderBy: { name: 'asc' },
       });
       expect(result).toEqual([
@@ -63,7 +58,7 @@ describe('TeamsService', () => {
 
   describe('findById', () => {
     it('returns the mapped team when found', async () => {
-      prismaMock.client.team.findUnique.mockResolvedValue(mockTeam);
+      dbMock.team.findUnique.mockResolvedValue(mockTeam);
 
       const result = await service.findById('team-cascade');
 
@@ -71,7 +66,7 @@ describe('TeamsService', () => {
     });
 
     it('throws NotFoundException when the team does not exist', async () => {
-      prismaMock.client.team.findUnique.mockResolvedValue(null);
+      dbMock.team.findUnique.mockResolvedValue(null);
 
       await expect(service.findById('missing')).rejects.toThrow(
         NotFoundException

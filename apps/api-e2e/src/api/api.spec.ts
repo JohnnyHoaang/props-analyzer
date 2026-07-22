@@ -1,8 +1,7 @@
 import axios from 'axios';
 
-// These specs hit a running `apps/api` instance backed by the seeded mock
-// data (see packages/database/src/mock-data). Locally: `docker-compose up -d`,
-// `pnpm db:migrate:deploy`, `pnpm db:seed`, then `nx e2e api-e2e`.
+// These specs hit a running `apps/api` instance. By default the API uses
+// mock-data.json (DATA_SOURCE=mock), so no Postgres is required.
 
 describe('GET /api/health', () => {
   it('reports ok without requiring any request body', async () => {

@@ -1,10 +1,20 @@
-import type { Game, Player, PlayerGameStat, Team } from '@props-analyzer/database';
+import type {
+  Game,
+  Player,
+  PlayerGameStat,
+  PropLine,
+  Team,
+} from '@props-analyzer/database';
 import type {
   GameBoxScoreEntryDto,
   PlayerDto,
   PlayerGameLogEntryDto,
+  PropLineDto,
+  PropStatType,
+  PropGameDto,
   PlayerWithTeamDto,
 } from '@props-analyzer/shared-types';
+import { statValueForType } from '@props-analyzer/shared-types';
 import { toTeamDto } from '../teams/teams.mapper.js';
 
 export function toPlayerDto(player: Player): PlayerDto {
@@ -90,5 +100,43 @@ export function toGameBoxScoreEntryDto(
   return {
     ...toPlayerGameStatDto(stat),
     player: toPlayerDto(stat.player),
+  };
+}
+
+/**
+ * Per-game context shared by every market for one player — computed once by
+ * the caller (opponent/home-away don't change between markets, only the
+ * stat value does).
+ */
+export interface PropGameContext {
+  gameId: string;
+  date: string;
+  opponentAbbreviation: string;
+  isHome: boolean;
+  stat: PlayerGameStat;
+}
+
+export function toPropLineDto(
+  propLine: PropLine,
+  games: PropGameContext[]
+): PropLineDto {
+  const statType = propLine.statType as PropStatType;
+
+  const series: PropGameDto[] = games.map((context) => ({
+    gameId: context.gameId,
+    date: context.date,
+    opponentAbbreviation: context.opponentAbbreviation,
+    isHome: context.isHome,
+    value: statValueForType(context.stat, statType),
+  }));
+
+  return {
+    playerId: propLine.playerId,
+    statType,
+    line: propLine.line,
+    overOdds: propLine.overOdds,
+    underOdds: propLine.underOdds,
+    projection: propLine.projection,
+    games: series,
   };
 }

@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../database/prisma.service.js';
+import { DATA_CLIENT } from '../database/data-client.token.js';
 import { GamesService } from './games.service.js';
 
 describe('GamesService', () => {
@@ -34,15 +34,13 @@ describe('GamesService', () => {
     awayTeam: mockTeam('team-meridian', 'MER'),
   };
 
-  const prismaMock = {
-    client: {
-      game: {
-        findMany: jest.fn(),
-        findUnique: jest.fn(),
-      },
-      playerGameStat: {
-        findMany: jest.fn(),
-      },
+  const dbMock = {
+    game: {
+      findMany: jest.fn(),
+      findUnique: jest.fn(),
+    },
+    playerGameStat: {
+      findMany: jest.fn(),
     },
   };
 
@@ -50,7 +48,7 @@ describe('GamesService', () => {
     jest.clearAllMocks();
 
     const moduleRef = await Test.createTestingModule({
-      providers: [GamesService, { provide: PrismaService, useValue: prismaMock }],
+      providers: [GamesService, { provide: DATA_CLIENT, useValue: dbMock }],
     }).compile();
 
     service = moduleRef.get(GamesService);
@@ -58,11 +56,11 @@ describe('GamesService', () => {
 
   describe('findAll', () => {
     it('filters by either home or away team when teamId is given', async () => {
-      prismaMock.client.game.findMany.mockResolvedValue([mockGame]);
+      dbMock.game.findMany.mockResolvedValue([mockGame]);
 
       await service.findAll({ limit: 50, teamId: 'team-cascade' });
 
-      expect(prismaMock.client.game.findMany).toHaveBeenCalledWith(
+      expect(dbMock.game.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: {
             OR: [{ homeTeamId: 'team-cascade' }, { awayTeamId: 'team-cascade' }],
@@ -74,7 +72,7 @@ describe('GamesService', () => {
 
   describe('findById', () => {
     it('throws NotFoundException when missing', async () => {
-      prismaMock.client.game.findUnique.mockResolvedValue(null);
+      dbMock.game.findUnique.mockResolvedValue(null);
 
       await expect(service.findById('missing')).rejects.toThrow(
         NotFoundException
@@ -82,7 +80,7 @@ describe('GamesService', () => {
     });
 
     it('maps a found game with its teams', async () => {
-      prismaMock.client.game.findUnique.mockResolvedValue(mockGame);
+      dbMock.game.findUnique.mockResolvedValue(mockGame);
 
       const result = await service.findById('game-001');
 
@@ -93,7 +91,7 @@ describe('GamesService', () => {
 
   describe('findBoxScore', () => {
     it('throws NotFoundException for an unknown game', async () => {
-      prismaMock.client.game.findUnique.mockResolvedValue(null);
+      dbMock.game.findUnique.mockResolvedValue(null);
 
       await expect(service.findBoxScore('missing')).rejects.toThrow(
         NotFoundException

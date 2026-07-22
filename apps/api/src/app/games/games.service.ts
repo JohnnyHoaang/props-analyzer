@@ -1,17 +1,17 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { ListGamesQuery } from '@props-analyzer/validation';
 import type {
   GameBoxScoreEntryDto,
   GameWithTeamsDto,
 } from '@props-analyzer/shared-types';
-import type { Prisma } from '@props-analyzer/database';
-import { PrismaService } from '../database/prisma.service.js';
+import type { DataClient, Game, Player, PlayerGameStat, Prisma, Team } from '@props-analyzer/database';
+import { DATA_CLIENT } from '../database/data-client.token.js';
 import { toGameBoxScoreEntryDto } from '../players/players.mapper.js';
 import { toGameWithTeamsDto } from './games.mapper.js';
 
 @Injectable()
 export class GamesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(DATA_CLIENT) private readonly db: DataClient) {}
 
   async findAll(query: ListGamesQuery): Promise<GameWithTeamsDto[]> {
     const where: Prisma.GameWhereInput = {
@@ -23,22 +23,22 @@ export class GamesService {
         : {}),
     };
 
-    const games = await this.prisma.client.game.findMany({
+    const games = (await this.db.game.findMany({
       where,
       include: { homeTeam: true, awayTeam: true },
       orderBy: { date: 'desc' },
       take: query.limit,
       ...(query.cursor ? { cursor: { id: query.cursor }, skip: 1 } : {}),
-    });
+    })) as Array<Game & { homeTeam: Team; awayTeam: Team }>;
 
     return games.map(toGameWithTeamsDto);
   }
 
   async findById(id: string): Promise<GameWithTeamsDto> {
-    const game = await this.prisma.client.game.findUnique({
+    const game = (await this.db.game.findUnique({
       where: { id },
       include: { homeTeam: true, awayTeam: true },
-    });
+    })) as (Game & { homeTeam: Team; awayTeam: Team }) | null;
 
     if (!game) {
       throw new NotFoundException(`Game ${id} not found`);
@@ -48,7 +48,7 @@ export class GamesService {
   }
 
   async findBoxScore(gameId: string): Promise<GameBoxScoreEntryDto[]> {
-    const game = await this.prisma.client.game.findUnique({
+    const game = await this.db.game.findUnique({
       where: { id: gameId },
     });
 
@@ -56,11 +56,11 @@ export class GamesService {
       throw new NotFoundException(`Game ${gameId} not found`);
     }
 
-    const stats = await this.prisma.client.playerGameStat.findMany({
+    const stats = (await this.db.playerGameStat.findMany({
       where: { gameId },
       include: { player: true },
       orderBy: [{ starter: 'desc' }, { points: 'desc' }],
-    });
+    })) as Array<PlayerGameStat & { player: Player }>;
 
     return stats.map(toGameBoxScoreEntryDto);
   }

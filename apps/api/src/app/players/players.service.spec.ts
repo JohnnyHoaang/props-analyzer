@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../database/prisma.service.js';
+import { DATA_CLIENT } from '../database/data-client.token.js';
 import { PlayersService } from './players.service.js';
 
 describe('PlayersService', () => {
@@ -64,15 +64,19 @@ describe('PlayersService', () => {
     game: mockGame,
   };
 
-  const prismaMock = {
-    client: {
-      player: {
-        findMany: jest.fn(),
-        findUnique: jest.fn(),
-      },
-      playerGameStat: {
-        findMany: jest.fn(),
-      },
+  const dbMock = {
+    player: {
+      findMany: jest.fn(),
+      findUnique: jest.fn(),
+    },
+    playerGameStat: {
+      findMany: jest.fn(),
+    },
+    propLine: {
+      findMany: jest.fn(),
+    },
+    team: {
+      findMany: jest.fn(),
     },
   };
 
@@ -82,7 +86,7 @@ describe('PlayersService', () => {
     const moduleRef = await Test.createTestingModule({
       providers: [
         PlayersService,
-        { provide: PrismaService, useValue: prismaMock },
+        { provide: DATA_CLIENT, useValue: dbMock },
       ],
     }).compile();
 
@@ -91,7 +95,7 @@ describe('PlayersService', () => {
 
   describe('findAll', () => {
     it('builds a Prisma where clause from the query filters', async () => {
-      prismaMock.client.player.findMany.mockResolvedValue([mockPlayer]);
+      dbMock.player.findMany.mockResolvedValue([mockPlayer]);
 
       const result = await service.findAll({
         limit: 50,
@@ -100,7 +104,7 @@ describe('PlayersService', () => {
         active: true,
       });
 
-      expect(prismaMock.client.player.findMany).toHaveBeenCalledWith(
+      expect(dbMock.player.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { teamId: 'team-cascade', position: 'PG', active: true },
           take: 50,
@@ -111,11 +115,11 @@ describe('PlayersService', () => {
     });
 
     it('applies cursor pagination when a cursor is provided', async () => {
-      prismaMock.client.player.findMany.mockResolvedValue([]);
+      dbMock.player.findMany.mockResolvedValue([]);
 
       await service.findAll({ limit: 10, cursor: 'player-cascade-1' });
 
-      expect(prismaMock.client.player.findMany).toHaveBeenCalledWith(
+      expect(dbMock.player.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           cursor: { id: 'player-cascade-1' },
           skip: 1,
@@ -126,7 +130,7 @@ describe('PlayersService', () => {
 
   describe('findById', () => {
     it('throws NotFoundException when missing', async () => {
-      prismaMock.client.player.findUnique.mockResolvedValue(null);
+      dbMock.player.findUnique.mockResolvedValue(null);
 
       await expect(service.findById('missing')).rejects.toThrow(
         NotFoundException
@@ -136,7 +140,7 @@ describe('PlayersService', () => {
 
   describe('findGameLog', () => {
     it('throws NotFoundException for an unknown player', async () => {
-      prismaMock.client.player.findUnique.mockResolvedValue(null);
+      dbMock.player.findUnique.mockResolvedValue(null);
 
       await expect(
         service.findGameLog('missing', { limit: 10 })
@@ -144,8 +148,8 @@ describe('PlayersService', () => {
     });
 
     it('marks games as home/away relative to the player team', async () => {
-      prismaMock.client.player.findUnique.mockResolvedValue(mockPlayer);
-      prismaMock.client.playerGameStat.findMany.mockResolvedValue([
+      dbMock.player.findUnique.mockResolvedValue(mockPlayer);
+      dbMock.playerGameStat.findMany.mockResolvedValue([
         mockStat,
       ]);
 
@@ -155,6 +159,56 @@ describe('PlayersService', () => {
 
       expect(entry.isHome).toBe(true);
       expect(entry.opponentTeamId).toBe('team-meridian');
+    });
+  });
+
+  describe('findProps', () => {
+    it('throws NotFoundException for an unknown player', async () => {
+      dbMock.player.findUnique.mockResolvedValue(null);
+
+      await expect(service.findProps('missing')).rejects.toThrow(
+        NotFoundException
+      );
+    });
+
+    it('derives the per-game series and resolves opponent abbreviations', async () => {
+      dbMock.player.findUnique.mockResolvedValue(mockPlayer);
+      dbMock.propLine.findMany.mockResolvedValue([
+        {
+          id: 'prop-1',
+          playerId: 'player-cascade-1',
+          statType: 'PTS_AST',
+          line: 27.5,
+          overOdds: -110,
+          underOdds: -110,
+          projection: 28.4,
+          createdAt: now,
+          updatedAt: now,
+        },
+      ]);
+      dbMock.playerGameStat.findMany.mockResolvedValue([
+        { ...mockStat, game: mockGame },
+      ]);
+      dbMock.team.findMany.mockResolvedValue([
+        {
+          id: 'team-meridian',
+          abbreviation: 'MER',
+          name: 'Meridian',
+          conference: 'EASTERN',
+          division: 'Atlantic',
+          createdAt: now,
+          updatedAt: now,
+        },
+      ]);
+
+      const [prop] = await service.findProps('player-cascade-1');
+
+      expect(prop.statType).toBe('PTS_AST');
+      expect(prop.games).toHaveLength(1);
+      // PTS_AST = points (20) + assists (7)
+      expect(prop.games[0].value).toBe(27);
+      expect(prop.games[0].opponentAbbreviation).toBe('MER');
+      expect(prop.games[0].isHome).toBe(true);
     });
   });
 });

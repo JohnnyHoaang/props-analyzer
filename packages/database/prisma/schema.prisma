@@ -55,7 +55,10 @@ model Player {
   teamId String
   team   Team   @relation(fields: [teamId], references: [id])
 
-  gameStats PlayerGameStat[]
+  gameStats     PlayerGameStat[]
+  injuryReports InjuryReport[]
+  lineupReports LineupReport[]
+  propLines     PropLine[]
 
   @@index([teamId])
   @@map("players")
@@ -138,6 +141,75 @@ model PlayerGameStat {
   @@map("player_game_stats")
 }
 
+/// A prop market for a player: the consensus line, both sides' American
+/// odds, and a mock projection. The per-game series the UI charts is derived
+/// at request time from PlayerGameStat (see PlayersService) rather than
+/// stored here — this row is only the line/odds/projection. `line` uses .5
+/// values so a game is never an exact push. `projection` is a placeholder
+/// until the projection engine lands (a later phase, see docs/MVP_TASKS.md).
+model PropLine {
+  id         String   @id @default(cuid())
+  statType   StatType
+  line       Float
+  overOdds   Int
+  underOdds  Int
+  projection Float
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  playerId String
+  player   Player @relation(fields: [playerId], references: [id])
+
+  @@unique([playerId, statType])
+  @@index([playerId])
+  @@map("prop_lines")
+}
+
+/// Player-level status feed, not tied to a specific game — matches
+/// docs/DATABASE_SCHEMA.md. Never overwrite old reports: each update is a
+/// new row, so the app can rebuild what was known at any point in time.
+/// "Current" status is derived by querying the latest `reportedAt` per
+/// player, same as LineupReport below.
+model InjuryReport {
+  id             String       @id @default(cuid())
+  status         InjuryStatus
+  description    String?
+  reportedAt     DateTime
+  expectedReturn DateTime?
+  confirmed      Boolean      @default(false)
+  source         String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  playerId String
+  player   Player @relation(fields: [playerId], references: [id])
+
+  @@index([playerId])
+  @@index([reportedAt])
+  @@map("injury_reports")
+}
+
+/// Each player's current expected role, independent of any single game
+/// (see docs/MVP_TASKS.md decision: Phase 1 has no upcoming/SCHEDULED
+/// games yet, so this can't reference one). Same append-only pattern as
+/// InjuryReport.
+model LineupReport {
+  id           String              @id @default(cuid())
+  role         LineupRole
+  confirmation LineupConfirmation
+  reportedAt   DateTime
+  source       String
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  playerId String
+  player   Player @relation(fields: [playerId], references: [id])
+
+  @@index([playerId])
+  @@index([reportedAt])
+  @@map("lineup_reports")
+}
+
 enum Conference {
   EASTERN
   WESTERN
@@ -160,4 +232,37 @@ enum GameStatus {
 enum GameType {
   REGULAR_SEASON
   PLAYOFFS
+}
+
+enum InjuryStatus {
+  OUT
+  DOUBTFUL
+  QUESTIONABLE
+  PROBABLE
+  ACTIVE
+}
+
+enum LineupRole {
+  STARTER
+  BENCH
+  OUT
+}
+
+enum LineupConfirmation {
+  EXPECTED
+  CONFIRMED
+}
+
+enum StatType {
+  POINTS
+  REBOUNDS
+  ASSISTS
+  THREES_MADE
+  STEALS
+  BLOCKS
+  TURNOVERS
+  PTS_REB
+  PTS_AST
+  REB_AST
+  PTS_REB_AST
 }

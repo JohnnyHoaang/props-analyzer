@@ -1,3 +1,8 @@
+import { seasonFixtures } from './seasons.js';
+import { teamFixtures } from './teams.js';
+import { hashString, mulberry32, randInt } from './random.js';
+import { addDays, toISODate } from './dates.js';
+
 export interface GameFixture {
   id: string;
   seasonId: string;
@@ -11,191 +16,109 @@ export interface GameFixture {
   overtimePeriods: number;
 }
 
+const SEASON_ID = seasonFixtures[0].id;
+const START_DATE = new Date('2025-11-01T00:00:00.000Z');
+const DAYS_BETWEEN_ROUNDS = 3;
+/** Each pair of teams meets this many times (must be even so wins/losses at
+ * home stay balanced — half home, half away per pairing). */
+const MEETINGS_PER_PAIR = 4;
+
 /**
- * A full single round-robin among the six mock teams (15 completed games),
- * so every team plays every other team exactly once. All games are final —
- * Phase 1 only deals with completed box scores (see AGENTS.md: no live game
- * tracking).
+ * Standard "circle method" round-robin scheduler: holds one team fixed and
+ * rotates the rest, producing `teams.length - 1` rounds where every team
+ * plays exactly once per round (so a round can be scheduled on a single
+ * date without double-booking any team).
  */
-export const gameFixtures: GameFixture[] = [
-  {
-    id: 'game-001',
-    seasonId: 'season-2025-26',
-    date: '2025-11-01',
-    status: 'FINAL',
-    gameType: 'REGULAR_SEASON',
-    homeTeamId: 'team-cascade',
-    awayTeamId: 'team-meridian',
-    homeScore: 108,
-    awayScore: 101,
-    overtimePeriods: 0,
-  },
-  {
-    id: 'game-002',
-    seasonId: 'season-2025-26',
-    date: '2025-11-04',
-    status: 'FINAL',
-    gameType: 'REGULAR_SEASON',
-    homeTeamId: 'team-sable',
-    awayTeamId: 'team-cascade',
-    homeScore: 97,
-    awayScore: 102,
-    overtimePeriods: 0,
-  },
-  {
-    id: 'game-003',
-    seasonId: 'season-2025-26',
-    date: '2025-11-07',
-    status: 'FINAL',
-    gameType: 'REGULAR_SEASON',
-    homeTeamId: 'team-cascade',
-    awayTeamId: 'team-harborview',
-    homeScore: 115,
-    awayScore: 110,
-    overtimePeriods: 0,
-  },
-  {
-    id: 'game-004',
-    seasonId: 'season-2025-26',
-    date: '2025-11-10',
-    status: 'FINAL',
-    gameType: 'REGULAR_SEASON',
-    homeTeamId: 'team-redstone',
-    awayTeamId: 'team-cascade',
-    homeScore: 104,
-    awayScore: 99,
-    overtimePeriods: 0,
-  },
-  {
-    id: 'game-005',
-    seasonId: 'season-2025-26',
-    date: '2025-11-13',
-    status: 'FINAL',
-    gameType: 'REGULAR_SEASON',
-    homeTeamId: 'team-cascade',
-    awayTeamId: 'team-lakeshore',
-    homeScore: 111,
-    awayScore: 106,
-    overtimePeriods: 0,
-  },
-  {
-    id: 'game-006',
-    seasonId: 'season-2025-26',
-    date: '2025-11-16',
-    status: 'FINAL',
-    gameType: 'REGULAR_SEASON',
-    homeTeamId: 'team-meridian',
-    awayTeamId: 'team-sable',
-    homeScore: 120,
-    awayScore: 118,
-    overtimePeriods: 1,
-  },
-  {
-    id: 'game-007',
-    seasonId: 'season-2025-26',
-    date: '2025-11-19',
-    status: 'FINAL',
-    gameType: 'REGULAR_SEASON',
-    homeTeamId: 'team-harborview',
-    awayTeamId: 'team-meridian',
-    homeScore: 96,
-    awayScore: 89,
-    overtimePeriods: 0,
-  },
-  {
-    id: 'game-008',
-    seasonId: 'season-2025-26',
-    date: '2025-11-22',
-    status: 'FINAL',
-    gameType: 'REGULAR_SEASON',
-    homeTeamId: 'team-meridian',
-    awayTeamId: 'team-redstone',
-    homeScore: 103,
-    awayScore: 100,
-    overtimePeriods: 0,
-  },
-  {
-    id: 'game-009',
-    seasonId: 'season-2025-26',
-    date: '2025-11-25',
-    status: 'FINAL',
-    gameType: 'REGULAR_SEASON',
-    homeTeamId: 'team-lakeshore',
-    awayTeamId: 'team-meridian',
-    homeScore: 109,
-    awayScore: 104,
-    overtimePeriods: 0,
-  },
-  {
-    id: 'game-010',
-    seasonId: 'season-2025-26',
-    date: '2025-11-28',
-    status: 'FINAL',
-    gameType: 'REGULAR_SEASON',
-    homeTeamId: 'team-sable',
-    awayTeamId: 'team-harborview',
-    homeScore: 112,
-    awayScore: 107,
-    overtimePeriods: 0,
-  },
-  {
-    id: 'game-011',
-    seasonId: 'season-2025-26',
-    date: '2025-12-01',
-    status: 'FINAL',
-    gameType: 'REGULAR_SEASON',
-    homeTeamId: 'team-redstone',
-    awayTeamId: 'team-sable',
-    homeScore: 98,
-    awayScore: 95,
-    overtimePeriods: 0,
-  },
-  {
-    id: 'game-012',
-    seasonId: 'season-2025-26',
-    date: '2025-12-04',
-    status: 'FINAL',
-    gameType: 'REGULAR_SEASON',
-    homeTeamId: 'team-sable',
-    awayTeamId: 'team-lakeshore',
-    homeScore: 121,
-    awayScore: 115,
-    overtimePeriods: 0,
-  },
-  {
-    id: 'game-013',
-    seasonId: 'season-2025-26',
-    date: '2025-12-07',
-    status: 'FINAL',
-    gameType: 'REGULAR_SEASON',
-    homeTeamId: 'team-harborview',
-    awayTeamId: 'team-redstone',
-    homeScore: 101,
-    awayScore: 97,
-    overtimePeriods: 0,
-  },
-  {
-    id: 'game-014',
-    seasonId: 'season-2025-26',
-    date: '2025-12-10',
-    status: 'FINAL',
-    gameType: 'REGULAR_SEASON',
-    homeTeamId: 'team-lakeshore',
-    awayTeamId: 'team-harborview',
-    homeScore: 106,
-    awayScore: 102,
-    overtimePeriods: 0,
-  },
-  {
-    id: 'game-015',
-    seasonId: 'season-2025-26',
-    date: '2025-12-13',
-    status: 'FINAL',
-    gameType: 'REGULAR_SEASON',
-    homeTeamId: 'team-redstone',
-    awayTeamId: 'team-lakeshore',
-    homeScore: 113,
-    awayScore: 108,
-    overtimePeriods: 0,
-  },
-];
+function buildRoundRobinRounds(teamIds: string[]): Array<Array<[string, string]>> {
+  const n = teamIds.length;
+  const fixed = teamIds[0];
+  let rotating = teamIds.slice(1);
+  const rounds: Array<Array<[string, string]>> = [];
+
+  for (let round = 0; round < n - 1; round++) {
+    const arranged = [fixed, ...rotating];
+    const pairs: Array<[string, string]> = [];
+    for (let i = 0; i < n / 2; i++) {
+      pairs.push([arranged[i], arranged[n - 1 - i]]);
+    }
+    rounds.push(pairs);
+    rotating = [rotating[rotating.length - 1], ...rotating.slice(0, -1)];
+  }
+
+  return rounds;
+}
+
+function generateScore(gameId: string): {
+  homeScore: number;
+  awayScore: number;
+  overtimePeriods: number;
+} {
+  const rng = mulberry32(hashString(`score:${gameId}`));
+  const homeAdvantage = 3;
+
+  let homeScore = randInt(rng, [96, 125]) + homeAdvantage;
+  let awayScore = randInt(rng, [96, 125]);
+  let overtimePeriods = 0;
+
+  if (homeScore === awayScore) {
+    overtimePeriods = 1;
+    const extra = randInt(rng, [4, 9]);
+    if (rng() < 0.5) {
+      homeScore += extra;
+    } else {
+      awayScore += extra;
+    }
+  }
+
+  return { homeScore, awayScore, overtimePeriods };
+}
+
+/**
+ * A balanced regular-season schedule: every pair of the six mock teams
+ * meets four times (twice at each team's home court), built from
+ * `MEETINGS_PER_PAIR` repeats of a single round-robin so no team ever plays
+ * twice on the same date. All games are final — Phase 1 only deals with
+ * completed box scores (see AGENTS.md: no live game tracking).
+ */
+function buildGameFixtures(): GameFixture[] {
+  const rounds = buildRoundRobinRounds(teamFixtures.map((team) => team.id));
+  const games: GameFixture[] = [];
+  let globalIndex = 0;
+
+  for (let leg = 0; leg < MEETINGS_PER_PAIR; leg++) {
+    for (let roundIndex = 0; roundIndex < rounds.length; roundIndex++) {
+      const dateIndex = leg * rounds.length + roundIndex;
+      const date = toISODate(
+        addDays(START_DATE, dateIndex * DAYS_BETWEEN_ROUNDS)
+      );
+
+      for (const [teamA, teamB] of rounds[roundIndex]) {
+        // Alternate which side of the pairing hosts, so across
+        // MEETINGS_PER_PAIR legs each team hosts exactly half the meetings.
+        const [homeTeamId, awayTeamId] =
+          leg % 2 === 0 ? [teamA, teamB] : [teamB, teamA];
+
+        globalIndex++;
+        const id = `game-${String(globalIndex).padStart(3, '0')}`;
+        const { homeScore, awayScore, overtimePeriods } = generateScore(id);
+
+        games.push({
+          id,
+          seasonId: SEASON_ID,
+          date,
+          status: 'FINAL',
+          gameType: 'REGULAR_SEASON',
+          homeTeamId,
+          awayTeamId,
+          homeScore,
+          awayScore,
+          overtimePeriods,
+        });
+      }
+    }
+  }
+
+  return games;
+}
+
+export const gameFixtures: GameFixture[] = buildGameFixtures();
