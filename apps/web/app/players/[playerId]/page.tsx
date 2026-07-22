@@ -4,62 +4,23 @@ import {
   ApiClientError,
   getPlayer,
   getPlayerGameLog,
+  getPlayerProps,
   listTeams,
 } from '@props-analyzer/api-client';
 import type {
   PlayerGameLogEntryDto,
+  PropLineDto,
   PlayerWithTeamDto,
   TeamDto,
 } from '@props-analyzer/shared-types';
 import { ErrorState } from '../../components/error-state';
 import { describeApiError } from '../../lib/errors';
-import {
-  formatDate,
-  formatHeight,
-  formatPlusMinus,
-  formatPosition,
-  formatShootingSplit,
-  formatWeight,
-} from '../../lib/format';
+import { formatHeight, formatPosition, formatWeight } from '../../lib/format';
+import { GameLog } from './game-log';
+import { PlayerProps } from './player-props';
 
 interface PlayerDetailPageProps {
   params: Promise<{ playerId: string }>;
-}
-
-function GameLogRow({
-  entry,
-  teamsById,
-}: {
-  entry: PlayerGameLogEntryDto;
-  teamsById: Map<string, TeamDto>;
-}) {
-  const opponent = teamsById.get(entry.opponentTeamId);
-
-  return (
-    <tr className="border-b border-slate-100 last:border-0">
-      <td className="px-4 py-3 text-slate-600">{formatDate(entry.game.date)}</td>
-      <td className="px-4 py-3 text-slate-600">
-        {entry.isHome ? 'vs' : '@'} {opponent?.abbreviation ?? entry.opponentTeamId}
-      </td>
-      <td className="px-4 py-3 text-right">{entry.minutes}</td>
-      <td className="px-4 py-3 text-right font-medium text-slate-900">
-        {entry.points}
-      </td>
-      <td className="px-4 py-3 text-right">{entry.rebounds}</td>
-      <td className="px-4 py-3 text-right">{entry.assists}</td>
-      <td className="px-4 py-3 text-right">{entry.steals}</td>
-      <td className="px-4 py-3 text-right">{entry.blocks}</td>
-      <td className="px-4 py-3 text-right text-slate-600">
-        {formatShootingSplit(entry.fgm, entry.fga)}
-      </td>
-      <td className="px-4 py-3 text-right text-slate-600">
-        {formatShootingSplit(entry.threePM, entry.threePA)}
-      </td>
-      <td className="px-4 py-3 text-right text-slate-600">
-        {formatPlusMinus(entry.plusMinus)}
-      </td>
-    </tr>
-  );
 }
 
 export default async function PlayerDetailPage({
@@ -81,73 +42,91 @@ export default async function PlayerDetailPage({
   }
 
   let gameLog: PlayerGameLogEntryDto[] = [];
-  let teamsById = new Map<string, TeamDto>();
+  let teams: TeamDto[] = [];
   let gameLogError: string | null = null;
 
-  try {
-    const [log, teams] = await Promise.all([
-      getPlayerGameLog(playerId, { limit: 15 }),
-      listTeams(),
-    ]);
+  // Props degrade independently of the game log — a failure in one shouldn't
+  // blank out the other.
+  let propLines: PropLineDto[] = [];
+
+  const [gameLogResult, propsResult] = await Promise.allSettled([
+    Promise.all([getPlayerGameLog(playerId, { limit: 15 }), listTeams()]),
+    getPlayerProps(playerId),
+  ]);
+
+  if (gameLogResult.status === 'fulfilled') {
+    const [log, teamsList] = gameLogResult.value;
     gameLog = log;
-    teamsById = new Map(teams.map((team) => [team.id, team]));
-  } catch (error) {
-    gameLogError = describeApiError(error);
+    teams = teamsList;
+  } else {
+    gameLogError = describeApiError(gameLogResult.reason);
+  }
+
+  if (propsResult.status === 'fulfilled') {
+    propLines = propsResult.value;
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8">
       <div>
-        <Link href="/players" className="text-sm text-blue-600 hover:underline">
+        <Link
+          href="/players"
+          className="text-sm font-semibold text-slate-500 hover:text-azure-400"
+        >
           ← All players
         </Link>
-        <h1 className="mt-2 text-2xl font-semibold text-slate-900">
-          {player.fullName}
-        </h1>
-        <p className="mt-1 text-slate-600">
-          {player.team.name} · {formatPosition(player.position)} ·{' '}
-          {formatHeight(player.height)}, {formatWeight(player.weight)}
-          {!player.active && (
-            <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
-              Inactive
-            </span>
-          )}
-        </p>
       </div>
 
-      <section>
-        <h2 className="mb-3 text-lg font-medium text-slate-900">Game log</h2>
-        {gameLogError ? (
-          <ErrorState title="Couldn't load the game log" message={gameLogError} />
-        ) : gameLog.length === 0 ? (
-          <p className="text-sm text-slate-500">No completed games yet.</p>
-        ) : (
-          <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                <tr>
-                  <th className="px-4 py-2">Date</th>
-                  <th className="px-4 py-2">Opponent</th>
-                  <th className="px-4 py-2 text-right">Min</th>
-                  <th className="px-4 py-2 text-right">Pts</th>
-                  <th className="px-4 py-2 text-right">Reb</th>
-                  <th className="px-4 py-2 text-right">Ast</th>
-                  <th className="px-4 py-2 text-right">Stl</th>
-                  <th className="px-4 py-2 text-right">Blk</th>
-                  <th className="px-4 py-2 text-right">FG</th>
-                  <th className="px-4 py-2 text-right">3P</th>
-                  <th className="px-4 py-2 text-right">+/-</th>
-                </tr>
-              </thead>
-              <tbody>
-                {gameLog.map((entry) => (
-                  <GameLogRow key={entry.id} entry={entry} teamsById={teamsById} />
-                ))}
-              </tbody>
-            </table>
+      <div className="relative overflow-hidden rounded-2xl border border-line-800 bg-ink-800">
+        <div
+          className="absolute inset-y-0 left-0 w-64 bg-gradient-to-br from-azure-500 to-ink-900"
+          style={{ clipPath: 'polygon(0 0, 85% 0, 60% 100%, 0 100%)' }}
+        />
+        <div className="relative flex flex-wrap items-center gap-6 px-8 py-8">
+          <div className="flex h-28 w-28 shrink-0 items-center justify-center rounded-full border-4 border-ink-800 bg-ink-900 font-display text-3xl font-extrabold text-white shadow-lg">
+            {player.fullName
+              .split(' ')
+              .map((part) => part.charAt(0))
+              .join('')
+              .slice(0, 2)}
           </div>
-        )}
-      </section>
+          <div className="flex flex-col gap-2">
+            <span className="text-xs font-bold uppercase tracking-widest text-slate-500">
+              Player Profile
+            </span>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="font-display text-3xl font-extrabold tracking-tight text-white">
+                {player.fullName}
+              </h1>
+              {player.active ? (
+                <span className="rounded-full bg-mint-500/15 px-2.5 py-0.5 text-xs font-semibold text-mint-400">
+                  Active
+                </span>
+              ) : (
+                <span className="rounded-full bg-ink-700 px-2.5 py-0.5 text-xs font-semibold text-slate-500">
+                  Inactive
+                </span>
+              )}
+            </div>
+            <p className="text-slate-400">
+              {player.team.name} · {formatPosition(player.position)} ·{' '}
+              {formatHeight(player.height)}, {formatWeight(player.weight)}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {propLines.length > 0 ? (
+        <PlayerProps
+          playerName={player.fullName}
+          propLines={propLines}
+          entries={gameLog}
+          teams={teams}
+          gameLogError={gameLogError}
+        />
+      ) : (
+        <GameLog entries={gameLog} teams={teams} error={gameLogError} />
+      )}
     </div>
   );
 }

@@ -22,14 +22,16 @@ export function PlayerFilters({
     <form
       method="get"
       action="/players"
-      className="flex flex-wrap items-end gap-4 rounded-lg border border-slate-200 bg-white p-4"
+      className="flex flex-wrap items-end gap-4 rounded-xl border border-line-800 bg-ink-800 p-4"
     >
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-slate-700">Team</span>
+      <label className="flex flex-col gap-1.5 text-sm">
+        <span className="text-xs font-bold uppercase tracking-widest text-slate-500">
+          Team
+        </span>
         <select
           name="teamId"
           defaultValue={value.teamId ?? ''}
-          className="rounded border border-slate-300 px-2 py-1.5"
+          className="rounded-lg border border-line-700 bg-ink-750 px-3 py-1.5 text-slate-200 focus:border-azure-500 focus:outline-none"
         >
           <option value="">All teams</option>
           {teams.map((team) => (
@@ -40,12 +42,14 @@ export function PlayerFilters({
         </select>
       </label>
 
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-slate-700">Position</span>
+      <label className="flex flex-col gap-1.5 text-sm">
+        <span className="text-xs font-bold uppercase tracking-widest text-slate-500">
+          Position
+        </span>
         <select
           name="position"
           defaultValue={value.position ?? ''}
-          className="rounded border border-slate-300 px-2 py-1.5"
+          className="rounded-lg border border-line-700 bg-ink-750 px-3 py-1.5 text-slate-200 focus:border-azure-500 focus:outline-none"
         >
           <option value="">All positions</option>
           {PLAYER_POSITIONS.map((position) => (
@@ -56,20 +60,20 @@ export function PlayerFilters({
         </select>
       </label>
 
-      <label className="flex items-center gap-2 pb-1.5 text-sm text-slate-700">
+      <label className="flex items-center gap-2 pb-1.5 text-sm text-slate-300">
         <input
           type="checkbox"
           name="active"
           value="true"
           defaultChecked={value.active === 'true'}
-          className="h-4 w-4 rounded border-slate-300"
+          className="h-4 w-4 rounded border-line-700 bg-ink-750 accent-azure-500"
         />
         Active only
       </label>
 
       <button
         type="submit"
-        className="rounded bg-slate-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-slate-700"
+        className="rounded-lg bg-azure-500 px-5 py-1.5 text-sm font-bold text-white transition-colors hover:bg-azure-600"
       >
         Apply
       </button>

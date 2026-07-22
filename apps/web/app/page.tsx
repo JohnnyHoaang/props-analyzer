@@ -13,20 +13,20 @@ function GameRow({ game }: { game: GameWithTeamsDto }) {
   const homeWon = (game.homeScore ?? 0) >= (game.awayScore ?? 0);
 
   return (
-    <li className="flex items-center justify-between gap-4 px-4 py-3">
-      <span className="w-24 shrink-0 text-sm text-slate-500">
+    <li className="group flex items-center gap-4 px-5 py-4 transition-colors hover:bg-ink-750">
+      <span className="w-20 shrink-0 text-xs font-semibold uppercase tracking-wide text-slate-500">
         {formatDate(game.date)}
       </span>
-      <span className="flex-1 text-sm">
-        <span className={!homeWon ? 'font-semibold text-slate-900' : undefined}>
+      <span className="flex flex-1 items-center gap-2 font-display text-sm font-bold">
+        <span className={!homeWon ? 'text-white' : 'text-slate-500'}>
           {game.awayTeam.abbreviation}
         </span>
-        <span className="text-slate-400"> @ </span>
-        <span className={homeWon ? 'font-semibold text-slate-900' : undefined}>
+        <span className="text-slate-600">@</span>
+        <span className={homeWon ? 'text-white' : 'text-slate-500'}>
           {game.homeTeam.abbreviation}
         </span>
       </span>
-      <span className="w-20 shrink-0 text-right text-sm text-slate-600">
+      <span className="tabular w-20 shrink-0 text-right font-display text-sm font-bold text-white">
         {game.awayScore}–{game.homeScore}
       </span>
     </li>
@@ -46,17 +46,19 @@ export default async function DashboardPage() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-2xl font-semibold text-slate-900">Dashboard</h1>
-        <p className="mt-1 text-slate-600">
+        <h1 className="font-display text-3xl font-extrabold tracking-tight text-white">
+          Dashboard
+        </h1>
+        <p className="mt-2 text-slate-400">
           Mock data for Phase 1 — no live tracking, completed games only.{' '}
-          <Link href="/players" className="font-medium text-blue-600 hover:underline">
+          <Link href="/players" className="font-semibold text-azure-400 hover:text-azure-300">
             Browse players →
           </Link>
         </p>
       </div>
 
       <section>
-        <h2 className="mb-3 text-lg font-medium text-slate-900">
+        <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-slate-500">
           Recent completed games
         </h2>
         {loadError ? (
@@ -64,7 +66,7 @@ export default async function DashboardPage() {
         ) : games.length === 0 ? (
           <p className="text-sm text-slate-500">No completed games yet.</p>
         ) : (
-          <ul className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
+          <ul className="divide-y divide-line-800 overflow-hidden rounded-xl border border-line-800 bg-ink-800">
             {games.map((game) => (
               <GameRow key={game.id} game={game} />
             ))}

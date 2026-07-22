@@ -13,6 +13,7 @@ jest.mock('@props-analyzer/api-client', () => {
     ...actual,
     getPlayer: jest.fn(),
     getPlayerGameLog: jest.fn(),
+    getPlayerProps: jest.fn(),
     listTeams: jest.fn(),
   };
 });
@@ -23,13 +24,13 @@ jest.mock('next/navigation', () => ({
   }),
 }));
 
-const { getPlayer, getPlayerGameLog, listTeams } = jest.requireMock(
-  '@props-analyzer/api-client'
-) as {
-  getPlayer: jest.Mock;
-  getPlayerGameLog: jest.Mock;
-  listTeams: jest.Mock;
-};
+const { getPlayer, getPlayerGameLog, getPlayerProps, listTeams } =
+  jest.requireMock('@props-analyzer/api-client') as {
+    getPlayer: jest.Mock;
+    getPlayerGameLog: jest.Mock;
+    getPlayerProps: jest.Mock;
+    listTeams: jest.Mock;
+  };
 
 function makeTeam(overrides: Partial<TeamDto> = {}): TeamDto {
   return {
@@ -103,6 +104,8 @@ describe('PlayerDetailPage', () => {
   beforeEach(() => {
     getPlayer.mockReset();
     getPlayerGameLog.mockReset();
+    getPlayerProps.mockReset();
+    getPlayerProps.mockResolvedValue([]);
     listTeams.mockReset();
   });
 
@@ -122,6 +125,44 @@ describe('PlayerDetailPage', () => {
     expect(screen.getByText(/Cascade Timber/)).toBeTruthy();
     expect(screen.getByText('vs OPP')).toBeTruthy();
     expect(screen.getByText('24')).toBeTruthy();
+  });
+
+  it('renders the prop analysis when markets are available', async () => {
+    getPlayer.mockResolvedValue(makePlayer());
+    getPlayerGameLog.mockResolvedValue([makeGameLogEntry()]);
+    listTeams.mockResolvedValue([]);
+    getPlayerProps.mockResolvedValue([
+      {
+        playerId: 'player-1',
+        statType: 'POINTS',
+        line: 15.5,
+        overOdds: -110,
+        underOdds: -110,
+        projection: 17.2,
+        games: [
+          {
+            gameId: 'game-1',
+            date: '2025-11-01',
+            opponentAbbreviation: 'OPP',
+            isHome: true,
+            value: 20,
+          },
+        ],
+      },
+    ]);
+
+    const ui = await PlayerDetailPage({
+      params: Promise.resolve({ playerId: 'player-1' }),
+    });
+    render(ui);
+
+    expect(screen.getByText('Jordan Rivers Points Prop')).toBeTruthy();
+    expect(screen.getByText('Prop Analysis')).toBeTruthy();
+
+    // The game log reflects the selected prop: a Prop column plus the
+    // over/under caption for that line.
+    expect(screen.getByText('Prop')).toBeTruthy();
+    expect(screen.getByText(/in these games at a line of/)).toBeTruthy();
   });
 
   it('renders an error state when the game log fails to load', async () => {

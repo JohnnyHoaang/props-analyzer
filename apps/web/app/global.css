@@ -1,1 +1,87 @@
 @import 'tailwindcss';
+
+/* next/font injects the real font stack into --font-sora/--font-manrope at
+   runtime (see layout.tsx) — `@theme inline` defers resolution instead of
+   baking in a static value, which is required when a theme token points at
+   a variable that doesn't exist until the font loader runs. */
+@theme inline {
+  --font-display: var(--font-sora), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+}
+
+@theme {
+  /* Navy/near-black surfaces, darkest to lightest. */
+  --color-ink-950: #05070d;
+  --color-ink-900: #090e1a;
+  --color-ink-850: #0c1220;
+  --color-ink-800: #111a2c;
+  --color-ink-750: #142238;
+  --color-ink-700: #1a2b45;
+  --color-ink-600: #22375a;
+
+  --color-line-800: #1c2740;
+  --color-line-700: #2a3a5c;
+
+  /* Warm gold accent — badges, underline flourishes. */
+  --color-gold-400: #f7cc4d;
+  --color-gold-500: #eab308;
+  --color-gold-600: #b8860b;
+
+  /* Cool azure accent — links, primary actions. */
+  --color-azure-400: #6a95f6;
+  --color-azure-500: #3f6fe8;
+  --color-azure-600: #2c54c4;
+
+  --color-mint-400: #4ade80;
+  --color-mint-500: #22c55e;
+
+  --color-coral-400: #fb7f7f;
+  --color-coral-500: #ef4444;
+
+  /* Prop chart over/under fills. Validated with the dataviz palette script
+     against the ink-800 card surface (dark mode): both inside the lightness
+     band, CVD ΔE 19.1 (well above the 12 target), contrast >= 3:1. Bar
+     position relative to the line + a legend + tooltips carry the meaning
+     without relying on color alone. Do not swap these for brighter mint/coral
+     without re-running the validator. */
+  --color-chart-over: #0ea968;
+  --color-chart-under: #ef4444;
+}
+
+::selection {
+  background-color: var(--color-azure-500);
+  color: white;
+}
+
+body {
+  background-color: var(--color-ink-900);
+  background-image:
+    radial-gradient(ellipse 900px 500px at 12% -10%, rgba(63, 111, 232, 0.16), transparent 60%),
+    radial-gradient(ellipse 700px 420px at 100% 0%, rgba(234, 179, 8, 0.08), transparent 55%);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+/* Firefox */
+* {
+  scrollbar-color: var(--color-line-700) transparent;
+}
+
+::-webkit-scrollbar {
+  height: 10px;
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-line-700);
+  border-radius: 999px;
+}
+
+/* Tabular figures everywhere stats/scores appear side by side. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
