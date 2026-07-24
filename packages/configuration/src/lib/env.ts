@@ -15,6 +15,13 @@ export const envSchema = z
     MOCK_DATA_PATH: z.string().min(1).optional(),
     API_PORT: z.coerce.number().int().positive().default(3333),
     NEXT_PUBLIC_API_URL: z.string().min(1).default('http://localhost:3333'),
+    // Supabase server-side integration (apps/api only). Optional so unrelated
+    // loadEnv calls don't fail the whole-object parse; URL fields validate
+    // format only when present.
+    SUPABASE_URL: z.string().url().optional(),
+    SUPABASE_PUBLISHABLE_KEY: z.string().min(1).optional(),
+    SUPABASE_SECRET_KEY: z.string().min(1).optional(),
+    SUPABASE_JWKS_URL: z.string().url().optional(),
   })
   .superRefine((env, ctx) => {
     if (env.DATA_SOURCE === 'postgres' && !env.DATABASE_URL) {
