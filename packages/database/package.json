@@ -19,6 +19,12 @@
       "types": "./dist/mock-data/index.d.ts",
       "import": "./dist/mock-data/index.js",
       "default": "./dist/mock-data/index.js"
+    },
+    "./supabase": {
+      "@props-analyzer/source": "./src/supabase/index.ts",
+      "types": "./dist/supabase/index.d.ts",
+      "import": "./dist/supabase/index.js",
+      "default": "./dist/supabase/index.js"
     }
   },
   "dependencies": {
