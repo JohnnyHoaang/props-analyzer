@@ -243,7 +243,10 @@ export function PropAnalysis({
           <Segmented
             options={options}
             value={timeframe}
-            onChange={setTimeframe}
+            onChange={(n) => {
+              setHovered(null);
+              setTimeframe(n);
+            }}
           />
         </div>
 
@@ -296,8 +299,10 @@ export function PropAnalysis({
                   </span>
                 </div>
 
-                {/* bars */}
+                {/* bars — keyed by timeframe so switching the game window
+                    remounts them and replays the grow-up animation. */}
                 <div
+                  key={timeframe}
                   className="absolute inset-0 flex items-end gap-1.5"
                   onMouseLeave={() => setHovered(null)}
                 >
@@ -305,6 +310,10 @@ export function PropAnalysis({
                     const isOver = game.value > altLine;
                     const heightPct = (game.value / niceMax) * 100;
                     const dimmed = hovered !== null && hovered !== index;
+                    // Bounded left-to-right stagger: total sweep stays ~250ms
+                    // regardless of how many games are in the window.
+                    const delayMs =
+                      (index / Math.max(windowGames.length - 1, 1)) * 250;
                     return (
                       <div
                         key={`${game.gameId}-${index}`}
@@ -312,13 +321,14 @@ export function PropAnalysis({
                         className="relative flex h-full min-w-[24px] flex-1 items-end"
                       >
                         <div
-                          className="w-full rounded-t-[4px] transition-[height,background-color,opacity] duration-200 ease-out"
+                          className="animate-bar-grow w-full rounded-t-[4px] transition-[height,background-color,opacity] duration-200 ease-out"
                           style={{
                             height: `${heightPct}%`,
                             opacity: dimmed ? 0.55 : 1,
                             backgroundColor: isOver
                               ? 'var(--color-chart-over)'
                               : 'var(--color-chart-under)',
+                            animationDelay: `${delayMs}ms`,
                           }}
                         />
                       </div>
