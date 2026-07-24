@@ -17,8 +17,8 @@ describe('SupabaseService', () => {
   });
 
   it('does not construct a client until admin is accessed', () => {
-    // eslint-disable-next-line no-new -- constructing alone must not build a client
-    new SupabaseService();
+    const service = new SupabaseService();
+    expect(service).toBeDefined();
     expect(createAdminClientMock).not.toHaveBeenCalled();
   });
 
