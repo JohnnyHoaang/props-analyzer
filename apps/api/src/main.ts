@@ -15,6 +15,8 @@ async function bootstrap() {
   loadDotenv({ path: path.join(__dirname, '..', '..', '..', '.env') });
 
   const { API_PORT } = loadEnv(process.env, ['API_PORT']);
+  // Cloud Run injects `PORT`; fall back to `API_PORT` for local dev.
+  const port = process.env.PORT ? Number(process.env.PORT) : API_PORT;
 
   const app = await NestFactory.create(AppModule);
 
@@ -38,12 +40,12 @@ async function bootstrap() {
   );
   SwaggerModule.setup(`${globalPrefix}/docs`, app, swaggerDocument);
 
-  await app.listen(API_PORT);
+  await app.listen(port);
   Logger.log(
-    `🚀 Application is running on: http://localhost:${API_PORT}/${globalPrefix}`
+    `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`
   );
   Logger.log(
-    `📚 Swagger docs available at: http://localhost:${API_PORT}/${globalPrefix}/docs`
+    `📚 Swagger docs available at: http://localhost:${port}/${globalPrefix}/docs`
   );
 }
 
