@@ -129,6 +129,22 @@ pnpm nx dev @props-analyzer/web
 
 All player, team, and game endpoints work in mock mode without a database.
 
+### Resetting the Nx cache
+
+If `serve` or `dev` starts slowly or serves stale output, clear the Nx cache and
+stop the daemon, then start the apps again. `nx reset` applies to the whole
+workspace, so it covers both the API and the web app:
+
+```bash
+pnpm nx reset   # clears the cache and stops the daemon for all projects (api + web)
+
+# then start the apps again
+pnpm nx serve @props-analyzer/api
+pnpm nx dev @props-analyzer/web
+```
+
+The first run after a reset rebuilds from scratch; subsequent runs are cached again.
+
 ### Using Postgres instead (optional)
 
 Set `DATA_SOURCE=postgres` and uncomment `DATABASE_URL` in `.env`, then:

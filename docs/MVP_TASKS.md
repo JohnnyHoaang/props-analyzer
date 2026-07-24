@@ -28,12 +28,8 @@ logs.
 * Schedule / player / game-log / team-stat importers
 * Injury report importer
 * Lineup report importer
+* BullMQ import queues
 * Import logging and duplicate prevention
-
-BullMQ/Redis queue infrastructure is deferred — run importers as plain
-scripts (cron or manually triggered) until import volume or retry needs
-actually require a job queue. Revisit once real provider integration is
-underway.
 
 Deliverable: NBA data, including injuries and lineups, is automatically
 stored and updated.

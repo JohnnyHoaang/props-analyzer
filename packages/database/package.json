@@ -36,6 +36,8 @@
     "db:migrate:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
-    "db:export-mock-data": "tsx scripts/export-mock-data.ts"
+    "db:export-mock-data": "tsx scripts/export-mock-data.ts",
+    "db:wipe-players": "tsx scripts/wipe-players.ts",
+    "db:load-bdl": "tsx scripts/load-bdl-data.ts"
   }
 }
