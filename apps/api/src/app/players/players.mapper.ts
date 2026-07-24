@@ -113,6 +113,8 @@ export interface PropGameContext {
   date: string;
   opponentAbbreviation: string;
   isHome: boolean;
+  /** Final margin from the player's team perspective (see PropGameDto.margin). */
+  margin: number;
   stat: PlayerGameStat;
 }
 
@@ -127,6 +129,7 @@ export function toPropLineDto(
     date: context.date,
     opponentAbbreviation: context.opponentAbbreviation,
     isHome: context.isHome,
+    margin: context.margin,
     value: statValueForType(context.stat, statType),
   }));
 

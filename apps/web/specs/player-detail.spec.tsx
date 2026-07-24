@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { ApiClientError } from '@props-analyzer/api-client';
 import type {
   PlayerGameLogEntryDto,
@@ -145,6 +145,7 @@ describe('PlayerDetailPage', () => {
             date: '2025-11-01',
             opponentAbbreviation: 'OPP',
             isHome: true,
+            margin: 7,
             value: 20,
           },
         ],
@@ -163,6 +164,119 @@ describe('PlayerDetailPage', () => {
     // over/under caption for that line.
     expect(screen.getByText('Prop')).toBeTruthy();
     expect(screen.getByText(/in these games at a line of/)).toBeTruthy();
+  });
+
+  it('filters the prop analysis to home or away games', async () => {
+    getPlayer.mockResolvedValue(makePlayer());
+    getPlayerGameLog.mockResolvedValue([makeGameLogEntry()]);
+    listTeams.mockResolvedValue([]);
+    // 3 home games all clear the line (20 > 15.5); 3 away games all miss it.
+    const propGame = (value: number, isHome: boolean, margin = 0) => ({
+      gameId: `g-${value}-${isHome ? 'h' : 'a'}-${margin}`,
+      date: '2025-11-01',
+      opponentAbbreviation: 'OPP',
+      isHome,
+      margin,
+      value,
+    });
+    getPlayerProps.mockResolvedValue([
+      {
+        playerId: 'player-1',
+        statType: 'POINTS',
+        line: 15.5,
+        overOdds: -110,
+        underOdds: -110,
+        projection: 17.2,
+        games: [
+          propGame(20, true),
+          propGame(10, false),
+          propGame(20, true),
+          propGame(10, false),
+          propGame(20, true),
+          propGame(10, false),
+        ],
+      },
+    ]);
+
+    const ui = await PlayerDetailPage({
+      params: Promise.resolve({ playerId: 'player-1' }),
+    });
+    render(ui);
+
+    // All 6 games: the Over hit on the 3 home games.
+    expect(screen.getByText(/in the last 6 games/)).toBeTruthy();
+
+    // Filters start collapsed — open the panel before using its controls.
+    fireEvent.click(screen.getByRole('button', { name: /Filters/i }));
+
+    // Home only → 3 games, all Overs.
+    fireEvent.click(screen.getByRole('button', { name: 'Home' }));
+    expect(screen.getByText(/in the last 3 games/)).toBeTruthy();
+    expect(screen.getByText('3/3')).toBeTruthy();
+
+    // Away only → 3 games, zero Overs.
+    fireEvent.click(screen.getByRole('button', { name: 'Away' }));
+    expect(screen.getByText('0/3')).toBeTruthy();
+
+    // Back to All → the full 6-game window returns.
+    fireEvent.click(screen.getByRole('button', { name: 'All' }));
+    expect(screen.getByText(/in the last 6 games/)).toBeTruthy();
+  });
+
+  it('excludes blowout games from the prop analysis', async () => {
+    getPlayer.mockResolvedValue(makePlayer());
+    getPlayerGameLog.mockResolvedValue([makeGameLogEntry()]);
+    listTeams.mockResolvedValue([]);
+    const propGame = (value: number, isHome: boolean, margin: number) => ({
+      gameId: `g-${value}-${margin}`,
+      date: '2025-11-01',
+      opponentAbbreviation: 'OPP',
+      isHome,
+      margin,
+      value,
+    });
+    getPlayerProps.mockResolvedValue([
+      {
+        playerId: 'player-1',
+        statType: 'POINTS',
+        line: 15.5,
+        overOdds: -110,
+        underOdds: -110,
+        projection: 17.2,
+        games: [
+          propGame(20, true, 25), // blowout win, over
+          propGame(20, true, 5), // close win, over
+          propGame(10, false, -25), // blowout loss, under
+          propGame(10, false, -5), // close loss, under
+        ],
+      },
+    ]);
+
+    const ui = await PlayerDetailPage({
+      params: Promise.resolve({ playerId: 'player-1' }),
+    });
+    render(ui);
+
+    expect(screen.getByText(/in the last 4 games/)).toBeTruthy();
+
+    // Filters start collapsed — open the panel before using its controls.
+    fireEvent.click(screen.getByRole('button', { name: /Filters/i }));
+
+    // Exclude wins of 20+ → the +25 blowout win drops, leaving 3 games.
+    fireEvent.click(
+      screen.getByRole('radio', { name: 'Exclude wins of 20+' })
+    );
+    expect(screen.getByText(/in the last 3 games/)).toBeTruthy();
+
+    // Exclude both → the +25 win and −25 loss drop, leaving 2 games.
+    fireEvent.click(screen.getByRole('radio', { name: 'Exclude both' }));
+    expect(screen.getByText(/in the last 2 games/)).toBeTruthy();
+
+    // Back to include-all → all 4 games return.
+    fireEvent.click(
+      screen.getByRole('radio', { name: 'Include all games' })
+    );
+    expect(screen.getByText(/in the last 4 games/)).toBeTruthy();
   });
 
   it('renders an error state when the game log fails to load', async () => {

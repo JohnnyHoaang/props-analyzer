@@ -212,6 +212,8 @@ describe('PlayersService', () => {
       expect(prop.games[0].value).toBe(27);
       expect(prop.games[0].opponentAbbreviation).toBe('MER');
       expect(prop.games[0].isHome).toBe(true);
+      // Home team won 108-101 → +7 margin from the player's perspective.
+      expect(prop.games[0].margin).toBe(7);
     });
   });
 });

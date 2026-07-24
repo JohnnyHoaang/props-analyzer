@@ -95,12 +95,19 @@ export class PlayersService {
         ? stat.game.awayTeamId
         : stat.game.homeTeamId;
 
+      // Signed margin from the player's team perspective. Scores are null only
+      // for games without a final result, which are treated as a 0 margin.
+      const playerScore = isHome ? stat.game.homeScore : stat.game.awayScore;
+      const opponentScore = isHome ? stat.game.awayScore : stat.game.homeScore;
+      const margin = (playerScore ?? 0) - (opponentScore ?? 0);
+
       return {
         gameId: stat.game.id,
         date: stat.game.date.toISOString(),
         opponentAbbreviation:
           abbreviationByTeamId.get(opponentTeamId) ?? opponentTeamId,
         isHome,
+        margin,
         stat,
       };
     });

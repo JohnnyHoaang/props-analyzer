@@ -6,6 +6,8 @@ import {
   chartPageSlice,
   defaultChartPageIndex,
   evidenceLevel,
+  filterGamesByBlowout,
+  filterGamesByLocation,
   formatChartAxisDate,
   formatChartPageRange,
   gamesSpanMultipleYears,
@@ -15,12 +17,13 @@ import {
   windowOptions,
 } from '../app/players/[playerId]/prop-stats';
 
-function game(value: number): PropGameDto {
+function game(value: number, margin = 0): PropGameDto {
   return {
     gameId: `g-${value}-${Math.random()}`,
     date: '2025-11-01',
     opponentAbbreviation: 'OPP',
     isHome: true,
+    margin,
     value,
   };
 }
@@ -170,5 +173,71 @@ describe('chart pagination', () => {
     // 10 and 20 split into even pages (5+5, 7+7+6) — never a single-bar page.
     expect(balancedChartPageSize(10, 8)).toBe(5);
     expect(balancedChartPageSize(20, 8)).toBe(7);
+  });
+});
+
+describe('filterGamesByLocation', () => {
+  function gameAt(value: number, isHome: boolean): PropGameDto {
+    return { ...game(value), isHome };
+  }
+
+  const games = [
+    gameAt(10, true),
+    gameAt(11, false),
+    gameAt(12, true),
+    gameAt(13, false),
+  ];
+
+  it("returns the same list for 'all'", () => {
+    expect(filterGamesByLocation(games, 'all')).toBe(games);
+  });
+
+  it("keeps only home games for 'home', preserving order", () => {
+    expect(filterGamesByLocation(games, 'home').map((g) => g.value)).toEqual([
+      10, 12,
+    ]);
+  });
+
+  it("keeps only away games for 'away', preserving order", () => {
+    expect(filterGamesByLocation(games, 'away').map((g) => g.value)).toEqual([
+      11, 13,
+    ]);
+  });
+
+  it('returns an empty list when no games match', () => {
+    const homeOnly = [gameAt(10, true), gameAt(12, true)];
+    expect(filterGamesByLocation(homeOnly, 'away')).toHaveLength(0);
+  });
+});
+
+describe('filterGamesByBlowout', () => {
+  // value is irrelevant here; margin drives the filter. Tag each by margin.
+  const blowoutWin = game(1, 25); // +25 → blowout win
+  const edgeWin = game(2, 20); // +20 → exactly the threshold, still a blowout
+  const closeWin = game(3, 19); // +19 → not a blowout
+  const closeLoss = game(4, -19); // -19 → not a blowout
+  const blowoutLoss = game(5, -25); // -25 → blowout loss
+  const games = [blowoutWin, edgeWin, closeWin, closeLoss, blowoutLoss];
+
+  it("returns the same list for 'all'", () => {
+    expect(filterGamesByBlowout(games, 'all')).toBe(games);
+  });
+
+  it("drops wins of 20+ for 'exclude-wins' (threshold inclusive)", () => {
+    expect(
+      filterGamesByBlowout(games, 'exclude-wins').map((g) => g.margin)
+    ).toEqual([19, -19, -25]);
+  });
+
+  it("drops losses of 20+ for 'exclude-losses'", () => {
+    expect(
+      filterGamesByBlowout(games, 'exclude-losses').map((g) => g.margin)
+    ).toEqual([25, 20, 19, -19]);
+  });
+
+  it("drops both blowout wins and losses for 'exclude-both'", () => {
+    expect(
+      filterGamesByBlowout(games, 'exclude-both').map((g) => g.margin)
+    ).toEqual([19, -19]);
   });
 });

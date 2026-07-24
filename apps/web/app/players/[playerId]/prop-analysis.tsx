@@ -14,6 +14,8 @@ import {
   CHART_GAMES_PER_PAGE,
   defaultChartPageIndex,
   evidenceLevel,
+  filterGamesByBlowout,
+  filterGamesByLocation,
   formatChartAxisDate,
   formatChartPageRange,
   gamesSpanMultipleYears,
@@ -23,6 +25,11 @@ import {
   windowOptions,
   type EvidenceLevel,
 } from './prop-stats';
+import {
+  ChartFilters,
+  DEFAULT_CHART_FILTERS,
+  type ChartFilterState,
+} from './chart-filters';
 
 /**
  * Tracks whether the viewport is phone-sized so the chart can page through
@@ -198,7 +205,23 @@ export function PropAnalysis({
     [propLines, selectedStatType]
   );
 
-  const totalGames = selected.games.length;
+  const [filters, setFilters] = useState<ChartFilterState>(
+    DEFAULT_CHART_FILTERS
+  );
+
+  // The whole analysis (bars, hit rates, evidence, record) runs on this
+  // filtered subset; `selected` still supplies market metadata (line, odds).
+  // Filters are independent predicates, so composition order doesn't matter.
+  const filteredGames = useMemo(
+    () =>
+      filterGamesByBlowout(
+        filterGamesByLocation(selected.games, filters.location),
+        filters.blowout
+      ),
+    [selected.games, filters.location, filters.blowout]
+  );
+
+  const totalGames = filteredGames.length;
   const options = useMemo(() => windowOptions(totalGames), [totalGames]);
   const defaultWindow = options.includes(15) ? 15 : options[options.length - 1];
 
@@ -208,8 +231,9 @@ export function PropAnalysis({
   const [altLine, setAltLine] = useState(selected.line);
   const [hovered, setHovered] = useState<number | null>(null);
 
-  // Switching markets resets the alt line to that market's consensus line and
-  // re-clamps the timeframe to what the new series supports.
+  // Switching markets — or changing a filter, which reshapes `options`/
+  // `defaultWindow` the same way — resets the alt line to the consensus line
+  // and re-clamps the timeframe to what the (now smaller) series supports.
   useEffect(() => {
     setAltLine(selected.line);
     setHovered(null);
@@ -219,8 +243,8 @@ export function PropAnalysis({
   }, [selected.line, options, defaultWindow]);
 
   const windowGames = useMemo(
-    () => selected.games.slice(-timeframe),
-    [selected.games, timeframe]
+    () => filteredGames.slice(-timeframe),
+    [filteredGames, timeframe]
   );
 
   // On phones, spread the window across more pages of fewer, wider bars so
@@ -260,7 +284,7 @@ export function PropAnalysis({
 
   const atAltLine = summarizeWindow(windowGames, altLine);
   const atConsensus = summarizeWindow(windowGames, selected.line);
-  const seasonAtConsensus = summarizeWindow(selected.games, selected.line);
+  const seasonAtConsensus = summarizeWindow(filteredGames, selected.line);
   const evidence = evidenceLevel(windowGames);
 
   const label = STAT_TYPE_LABELS[selected.statType];
@@ -295,8 +319,10 @@ export function PropAnalysis({
     Math.round(niceMax * f * 10) / 10
   );
 
-  return (
-    <section className="flex flex-col gap-6">
+  // Shared across the normal and empty states so the market pills, title, and
+  // filters stay put while the analysis below them appears or disappears.
+  const header = (
+    <>
       {/* Market selector */}
       <div className="flex gap-2 overflow-x-auto pb-1">
         {propLines.map((prop) => (
@@ -312,6 +338,26 @@ export function PropAnalysis({
       <h2 className="font-display text-2xl font-extrabold tracking-tight text-white">
         {playerName} {label} Prop
       </h2>
+
+      {/* Filters */}
+      <ChartFilters filters={filters} onChange={setFilters} />
+    </>
+  );
+
+  if (filteredGames.length === 0) {
+    return (
+      <section className="flex flex-col gap-6">
+        {header}
+        <div className="rounded-xl border border-line-800 bg-ink-800 px-6 py-10 text-center text-sm text-slate-400">
+          No games match the current filters.
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="flex flex-col gap-6">
+      {header}
 
       {/* Summary row */}
       <div className="grid grid-cols-2 gap-4 rounded-xl border border-line-800 bg-ink-800 px-5 py-4 sm:flex sm:flex-wrap sm:gap-6 sm:px-6 sm:py-5">
@@ -364,7 +410,7 @@ export function PropAnalysis({
             onChange={(n) => {
               setHovered(null);
               setTimeframe(n);
-              const nextLength = Math.min(n, selected.games.length);
+              const nextLength = Math.min(n, filteredGames.length);
               const nextPageSize = isMobile
                 ? balancedChartPageSize(
                     nextLength,
