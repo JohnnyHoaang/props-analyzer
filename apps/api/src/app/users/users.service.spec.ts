@@ -1,13 +1,13 @@
 import { Test } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
-import { DATA_CLIENT } from '../database/data-client.token.js';
+import { REPOSITORIES } from '../database/repositories.token.js';
 import { UsersService } from './users.service.js';
 
 describe('UsersService', () => {
   let service: UsersService;
   const now = new Date('2025-11-01T00:00:00.000Z');
 
-  const dbMock = {
+  const repos = {
     user: { findFirst: jest.fn() },
   };
 
@@ -15,14 +15,14 @@ describe('UsersService', () => {
     jest.clearAllMocks();
 
     const moduleRef = await Test.createTestingModule({
-      providers: [UsersService, { provide: DATA_CLIENT, useValue: dbMock }],
+      providers: [UsersService, { provide: REPOSITORIES, useValue: repos }],
     }).compile();
 
     service = moduleRef.get(UsersService);
   });
 
   it('returns the mapped stub user', async () => {
-    dbMock.user.findFirst.mockResolvedValue({
+    repos.user.findFirst.mockResolvedValue({
       id: 'user-stub-1',
       email: 'demo@props-analyzer.local',
       name: 'Demo User',
@@ -42,7 +42,7 @@ describe('UsersService', () => {
   });
 
   it('throws NotFoundException when no stub user is available', async () => {
-    dbMock.user.findFirst.mockResolvedValue(null);
+    repos.user.findFirst.mockResolvedValue(null);
 
     await expect(service.getCurrentUser()).rejects.toThrow(NotFoundException);
   });

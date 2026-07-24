@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
-import { DATA_CLIENT } from '../database/data-client.token.js';
+import { REPOSITORIES } from '../database/repositories.token.js';
 import { TeamsService } from './teams.service.js';
 
 describe('TeamsService', () => {
@@ -16,10 +16,10 @@ describe('TeamsService', () => {
     updatedAt: now,
   };
 
-  const dbMock = {
+  const repos = {
     team: {
-      findMany: jest.fn(),
-      findUnique: jest.fn(),
+      list: jest.fn(),
+      findById: jest.fn(),
     },
   };
 
@@ -27,21 +27,19 @@ describe('TeamsService', () => {
     jest.clearAllMocks();
 
     const moduleRef = await Test.createTestingModule({
-      providers: [TeamsService, { provide: DATA_CLIENT, useValue: dbMock }],
+      providers: [TeamsService, { provide: REPOSITORIES, useValue: repos }],
     }).compile();
 
     service = moduleRef.get(TeamsService);
   });
 
   describe('findAll', () => {
-    it('maps Prisma teams to TeamDto, sorted by name', async () => {
-      dbMock.team.findMany.mockResolvedValue([mockTeam]);
+    it('maps teams to TeamDto', async () => {
+      repos.team.list.mockResolvedValue([mockTeam]);
 
       const result = await service.findAll();
 
-      expect(dbMock.team.findMany).toHaveBeenCalledWith({
-        orderBy: { name: 'asc' },
-      });
+      expect(repos.team.list).toHaveBeenCalled();
       expect(result).toEqual([
         {
           id: 'team-cascade',
@@ -58,7 +56,7 @@ describe('TeamsService', () => {
 
   describe('findById', () => {
     it('returns the mapped team when found', async () => {
-      dbMock.team.findUnique.mockResolvedValue(mockTeam);
+      repos.team.findById.mockResolvedValue(mockTeam);
 
       const result = await service.findById('team-cascade');
 
@@ -66,7 +64,7 @@ describe('TeamsService', () => {
     });
 
     it('throws NotFoundException when the team does not exist', async () => {
-      dbMock.team.findUnique.mockResolvedValue(null);
+      repos.team.findById.mockResolvedValue(null);
 
       await expect(service.findById('missing')).rejects.toThrow(
         NotFoundException

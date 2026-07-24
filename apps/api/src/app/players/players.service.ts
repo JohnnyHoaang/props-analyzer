@@ -9,8 +9,8 @@ import type {
   PlayerWithTeamDto,
 } from '@props-analyzer/shared-types';
 import { PROP_STAT_TYPES } from '@props-analyzer/shared-types';
-import type { DataClient, Game, Player, PlayerGameStat, Prisma, PropLine, Team } from '@props-analyzer/database';
-import { DATA_CLIENT } from '../database/data-client.token.js';
+import type { Repositories } from '@props-analyzer/database';
+import { REPOSITORIES } from '../database/repositories.token.js';
 import {
   toPlayerGameLogEntryDto,
   toPlayerWithTeamDto,
@@ -20,50 +20,24 @@ import {
 
 @Injectable()
 export class PlayersService {
-  constructor(@Inject(DATA_CLIENT) private readonly db: DataClient) {}
+  constructor(@Inject(REPOSITORIES) private readonly repos: Repositories) {}
 
   async findAll(query: ListPlayersQuery): Promise<PlayerWithTeamDto[]> {
-    const where: Prisma.PlayerWhereInput = {
-      ...(query.teamId ? { teamId: query.teamId } : {}),
-      ...(query.position ? { position: query.position } : {}),
-      ...(query.active !== undefined ? { active: query.active } : {}),
-      ...(query.search
-        ? {
-            fullName: {
-              contains: query.search,
-              mode: 'insensitive',
-            },
-          }
-        : {}),
-    };
-
-    const limit = query.limit;
-    const paginationArgs =
-      query.cursor !== undefined
-        ? {
-            cursor: { id: query.cursor },
-            skip: 1,
-            ...(limit !== undefined ? { take: limit } : {}),
-          }
-        : limit !== undefined
-          ? { take: limit, skip: (query.page - 1) * limit }
-          : {};
-
-    const players = (await this.db.player.findMany({
-      where,
-      include: { team: true },
-      orderBy: { fullName: 'asc' },
-      ...paginationArgs,
-    })) as Array<Player & { team: Team }>;
+    const players = await this.repos.player.list({
+      teamId: query.teamId,
+      position: query.position,
+      active: query.active,
+      search: query.search,
+      limit: query.limit,
+      cursor: query.cursor,
+      page: query.page,
+    });
 
     return players.map(toPlayerWithTeamDto);
   }
 
   async findById(id: string): Promise<PlayerWithTeamDto> {
-    const player = (await this.db.player.findUnique({
-      where: { id },
-      include: { team: true },
-    })) as (Player & { team: Team }) | null;
+    const player = await this.repos.player.findByIdWithTeam(id);
 
     if (!player) {
       throw new NotFoundException(`Player ${id} not found`);
@@ -76,20 +50,16 @@ export class PlayersService {
     playerId: string,
     query: PlayerGameLogQuery
   ): Promise<PlayerGameLogEntryDto[]> {
-    const player = await this.db.player.findUnique({
-      where: { id: playerId },
-    });
+    const player = await this.repos.player.findById(playerId);
 
     if (!player) {
       throw new NotFoundException(`Player ${playerId} not found`);
     }
 
-    const stats = (await this.db.playerGameStat.findMany({
-      where: { playerId },
-      include: { game: true },
-      orderBy: { game: { date: 'desc' } },
-      take: query.limit,
-    })) as Array<PlayerGameStat & { game: Game }>;
+    const stats = await this.repos.playerGameStat.listByPlayerWithGame(
+      playerId,
+      { order: 'desc', limit: query.limit }
+    );
 
     return stats.map((stat) => toPlayerGameLogEntryDto(stat, player.teamId));
   }
@@ -101,22 +71,18 @@ export class PlayersService {
    * projection come from the stored PropLine rows.
    */
   async findProps(playerId: string): Promise<PropLineDto[]> {
-    const player = await this.db.player.findUnique({
-      where: { id: playerId },
-    });
+    const player = await this.repos.player.findById(playerId);
 
     if (!player) {
       throw new NotFoundException(`Player ${playerId} not found`);
     }
 
     const [propLines, stats, teams] = await Promise.all([
-      this.db.propLine.findMany({ where: { playerId } }) as Promise<PropLine[]>,
-      this.db.playerGameStat.findMany({
-        where: { playerId },
-        include: { game: true },
-        orderBy: { game: { date: 'asc' } },
-      }) as Promise<Array<PlayerGameStat & { game: Game }>>,
-      this.db.team.findMany({}) as Promise<Team[]>,
+      this.repos.propLine.listByPlayer(playerId),
+      this.repos.playerGameStat.listByPlayerWithGame(playerId, {
+        order: 'asc',
+      }),
+      this.repos.team.list(),
     ]);
 
     const abbreviationByTeamId = new Map(

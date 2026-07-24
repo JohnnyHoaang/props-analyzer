@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
-import { DATA_CLIENT } from '../database/data-client.token.js';
+import { REPOSITORIES } from '../database/repositories.token.js';
 import { GamesService } from './games.service.js';
 
 describe('GamesService', () => {
@@ -34,13 +34,14 @@ describe('GamesService', () => {
     awayTeam: mockTeam('team-meridian', 'MER'),
   };
 
-  const dbMock = {
+  const repos = {
     game: {
-      findMany: jest.fn(),
-      findUnique: jest.fn(),
+      list: jest.fn(),
+      findByIdWithTeams: jest.fn(),
+      findById: jest.fn(),
     },
     playerGameStat: {
-      findMany: jest.fn(),
+      listByGameWithPlayer: jest.fn(),
     },
   };
 
@@ -48,31 +49,27 @@ describe('GamesService', () => {
     jest.clearAllMocks();
 
     const moduleRef = await Test.createTestingModule({
-      providers: [GamesService, { provide: DATA_CLIENT, useValue: dbMock }],
+      providers: [GamesService, { provide: REPOSITORIES, useValue: repos }],
     }).compile();
 
     service = moduleRef.get(GamesService);
   });
 
   describe('findAll', () => {
-    it('filters by either home or away team when teamId is given', async () => {
-      dbMock.game.findMany.mockResolvedValue([mockGame]);
+    it('passes the team filter through to the repository', async () => {
+      repos.game.list.mockResolvedValue([mockGame]);
 
       await service.findAll({ limit: 50, teamId: 'team-cascade' });
 
-      expect(dbMock.game.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: {
-            OR: [{ homeTeamId: 'team-cascade' }, { awayTeamId: 'team-cascade' }],
-          },
-        })
+      expect(repos.game.list).toHaveBeenCalledWith(
+        expect.objectContaining({ teamId: 'team-cascade', limit: 50 })
       );
     });
   });
 
   describe('findById', () => {
     it('throws NotFoundException when missing', async () => {
-      dbMock.game.findUnique.mockResolvedValue(null);
+      repos.game.findByIdWithTeams.mockResolvedValue(null);
 
       await expect(service.findById('missing')).rejects.toThrow(
         NotFoundException
@@ -80,7 +77,7 @@ describe('GamesService', () => {
     });
 
     it('maps a found game with its teams', async () => {
-      dbMock.game.findUnique.mockResolvedValue(mockGame);
+      repos.game.findByIdWithTeams.mockResolvedValue(mockGame);
 
       const result = await service.findById('game-001');
 
@@ -91,7 +88,7 @@ describe('GamesService', () => {
 
   describe('findBoxScore', () => {
     it('throws NotFoundException for an unknown game', async () => {
-      dbMock.game.findUnique.mockResolvedValue(null);
+      repos.game.findById.mockResolvedValue(null);
 
       await expect(service.findBoxScore('missing')).rejects.toThrow(
         NotFoundException

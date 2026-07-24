@@ -1,7 +1,7 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { UserDto } from '@props-analyzer/shared-types';
-import type { DataClient } from '@props-analyzer/database';
-import { DATA_CLIENT } from '../database/data-client.token.js';
+import type { Repositories } from '@props-analyzer/database';
+import { REPOSITORIES } from '../database/repositories.token.js';
 import { toUserDto } from './users.mapper.js';
 
 /**
@@ -12,12 +12,10 @@ import { toUserDto } from './users.mapper.js';
  */
 @Injectable()
 export class UsersService {
-  constructor(@Inject(DATA_CLIENT) private readonly db: DataClient) {}
+  constructor(@Inject(REPOSITORIES) private readonly repos: Repositories) {}
 
   async getCurrentUser(): Promise<UserDto> {
-    const user = await this.db.user.findFirst({
-      orderBy: { createdAt: 'asc' },
-    });
+    const user = await this.repos.user.findFirst();
 
     if (!user) {
       throw new NotFoundException(

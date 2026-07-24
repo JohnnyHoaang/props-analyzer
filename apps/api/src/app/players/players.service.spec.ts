@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
-import { DATA_CLIENT } from '../database/data-client.token.js';
+import { REPOSITORIES } from '../database/repositories.token.js';
 import { PlayersService } from './players.service.js';
 
 describe('PlayersService', () => {
@@ -64,19 +64,20 @@ describe('PlayersService', () => {
     game: mockGame,
   };
 
-  const dbMock = {
+  const repos = {
     player: {
-      findMany: jest.fn(),
-      findUnique: jest.fn(),
+      list: jest.fn(),
+      findByIdWithTeam: jest.fn(),
+      findById: jest.fn(),
     },
     playerGameStat: {
-      findMany: jest.fn(),
+      listByPlayerWithGame: jest.fn(),
     },
     propLine: {
-      findMany: jest.fn(),
+      listByPlayer: jest.fn(),
     },
     team: {
-      findMany: jest.fn(),
+      list: jest.fn(),
     },
   };
 
@@ -84,18 +85,15 @@ describe('PlayersService', () => {
     jest.clearAllMocks();
 
     const moduleRef = await Test.createTestingModule({
-      providers: [
-        PlayersService,
-        { provide: DATA_CLIENT, useValue: dbMock },
-      ],
+      providers: [PlayersService, { provide: REPOSITORIES, useValue: repos }],
     }).compile();
 
     service = moduleRef.get(PlayersService);
   });
 
   describe('findAll', () => {
-    it('builds a Prisma where clause from the query filters', async () => {
-      dbMock.player.findMany.mockResolvedValue([mockPlayer]);
+    it('passes the query filters through to the repository', async () => {
+      repos.player.list.mockResolvedValue([mockPlayer]);
 
       const result = await service.findAll({
         limit: 50,
@@ -106,52 +104,38 @@ describe('PlayersService', () => {
         search: 'deshawn',
       });
 
-      expect(dbMock.player.findMany).toHaveBeenCalledWith(
+      expect(repos.player.list).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: {
-            teamId: 'team-cascade',
-            position: 'PG',
-            active: true,
-            fullName: { contains: 'deshawn', mode: 'insensitive' },
-          },
-          take: 50,
-          skip: 0,
+          teamId: 'team-cascade',
+          position: 'PG',
+          active: true,
+          search: 'deshawn',
+          limit: 50,
+          page: 1,
         })
       );
       expect(result).toHaveLength(1);
       expect(result[0].team.abbreviation).toBe('CAS');
     });
 
-    it('applies page-based pagination when a page is provided', async () => {
-      dbMock.player.findMany.mockResolvedValue([]);
+    it('forwards page and cursor to the repository', async () => {
+      repos.player.list.mockResolvedValue([]);
 
       await service.findAll({ limit: 10, page: 3 });
-
-      expect(dbMock.player.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          take: 10,
-          skip: 20,
-        })
+      expect(repos.player.list).toHaveBeenCalledWith(
+        expect.objectContaining({ limit: 10, page: 3 })
       );
-    });
-
-    it('applies cursor pagination when a cursor is provided', async () => {
-      dbMock.player.findMany.mockResolvedValue([]);
 
       await service.findAll({ limit: 10, page: 1, cursor: 'player-cascade-1' });
-
-      expect(dbMock.player.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          cursor: { id: 'player-cascade-1' },
-          skip: 1,
-        })
+      expect(repos.player.list).toHaveBeenCalledWith(
+        expect.objectContaining({ cursor: 'player-cascade-1' })
       );
     });
   });
 
   describe('findById', () => {
     it('throws NotFoundException when missing', async () => {
-      dbMock.player.findUnique.mockResolvedValue(null);
+      repos.player.findByIdWithTeam.mockResolvedValue(null);
 
       await expect(service.findById('missing')).rejects.toThrow(
         NotFoundException
@@ -161,7 +145,7 @@ describe('PlayersService', () => {
 
   describe('findGameLog', () => {
     it('throws NotFoundException for an unknown player', async () => {
-      dbMock.player.findUnique.mockResolvedValue(null);
+      repos.player.findById.mockResolvedValue(null);
 
       await expect(
         service.findGameLog('missing', { limit: 10 })
@@ -169,10 +153,8 @@ describe('PlayersService', () => {
     });
 
     it('marks games as home/away relative to the player team', async () => {
-      dbMock.player.findUnique.mockResolvedValue(mockPlayer);
-      dbMock.playerGameStat.findMany.mockResolvedValue([
-        mockStat,
-      ]);
+      repos.player.findById.mockResolvedValue(mockPlayer);
+      repos.playerGameStat.listByPlayerWithGame.mockResolvedValue([mockStat]);
 
       const [entry] = await service.findGameLog('player-cascade-1', {
         limit: 10,
@@ -185,7 +167,7 @@ describe('PlayersService', () => {
 
   describe('findProps', () => {
     it('throws NotFoundException for an unknown player', async () => {
-      dbMock.player.findUnique.mockResolvedValue(null);
+      repos.player.findById.mockResolvedValue(null);
 
       await expect(service.findProps('missing')).rejects.toThrow(
         NotFoundException
@@ -193,8 +175,8 @@ describe('PlayersService', () => {
     });
 
     it('derives the per-game series and resolves opponent abbreviations', async () => {
-      dbMock.player.findUnique.mockResolvedValue(mockPlayer);
-      dbMock.propLine.findMany.mockResolvedValue([
+      repos.player.findById.mockResolvedValue(mockPlayer);
+      repos.propLine.listByPlayer.mockResolvedValue([
         {
           id: 'prop-1',
           playerId: 'player-cascade-1',
@@ -207,10 +189,10 @@ describe('PlayersService', () => {
           updatedAt: now,
         },
       ]);
-      dbMock.playerGameStat.findMany.mockResolvedValue([
+      repos.playerGameStat.listByPlayerWithGame.mockResolvedValue([
         { ...mockStat, game: mockGame },
       ]);
-      dbMock.team.findMany.mockResolvedValue([
+      repos.team.list.mockResolvedValue([
         {
           id: 'team-meridian',
           abbreviation: 'MER',

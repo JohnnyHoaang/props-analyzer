@@ -4,41 +4,30 @@ import type {
   GameBoxScoreEntryDto,
   GameWithTeamsDto,
 } from '@props-analyzer/shared-types';
-import type { DataClient, Game, Player, PlayerGameStat, Prisma, Team } from '@props-analyzer/database';
-import { DATA_CLIENT } from '../database/data-client.token.js';
+import type { Repositories } from '@props-analyzer/database';
+import { REPOSITORIES } from '../database/repositories.token.js';
 import { toGameBoxScoreEntryDto } from '../players/players.mapper.js';
 import { toGameWithTeamsDto } from './games.mapper.js';
 
 @Injectable()
 export class GamesService {
-  constructor(@Inject(DATA_CLIENT) private readonly db: DataClient) {}
+  constructor(@Inject(REPOSITORIES) private readonly repos: Repositories) {}
 
   async findAll(query: ListGamesQuery): Promise<GameWithTeamsDto[]> {
-    const where: Prisma.GameWhereInput = {
-      ...(query.seasonId ? { seasonId: query.seasonId } : {}),
-      ...(query.status ? { status: query.status } : {}),
-      ...(query.gameType ? { gameType: query.gameType } : {}),
-      ...(query.teamId
-        ? { OR: [{ homeTeamId: query.teamId }, { awayTeamId: query.teamId }] }
-        : {}),
-    };
-
-    const games = (await this.db.game.findMany({
-      where,
-      include: { homeTeam: true, awayTeam: true },
-      orderBy: { date: 'desc' },
-      take: query.limit,
-      ...(query.cursor ? { cursor: { id: query.cursor }, skip: 1 } : {}),
-    })) as Array<Game & { homeTeam: Team; awayTeam: Team }>;
+    const games = await this.repos.game.list({
+      seasonId: query.seasonId,
+      status: query.status,
+      gameType: query.gameType,
+      teamId: query.teamId,
+      limit: query.limit,
+      cursor: query.cursor,
+    });
 
     return games.map(toGameWithTeamsDto);
   }
 
   async findById(id: string): Promise<GameWithTeamsDto> {
-    const game = (await this.db.game.findUnique({
-      where: { id },
-      include: { homeTeam: true, awayTeam: true },
-    })) as (Game & { homeTeam: Team; awayTeam: Team }) | null;
+    const game = await this.repos.game.findByIdWithTeams(id);
 
     if (!game) {
       throw new NotFoundException(`Game ${id} not found`);
@@ -48,19 +37,13 @@ export class GamesService {
   }
 
   async findBoxScore(gameId: string): Promise<GameBoxScoreEntryDto[]> {
-    const game = await this.db.game.findUnique({
-      where: { id: gameId },
-    });
+    const game = await this.repos.game.findById(gameId);
 
     if (!game) {
       throw new NotFoundException(`Game ${gameId} not found`);
     }
 
-    const stats = (await this.db.playerGameStat.findMany({
-      where: { gameId },
-      include: { player: true },
-      orderBy: [{ starter: 'desc' }, { points: 'desc' }],
-    })) as Array<PlayerGameStat & { player: Player }>;
+    const stats = await this.repos.playerGameStat.listByGameWithPlayer(gameId);
 
     return stats.map(toGameBoxScoreEntryDto);
   }

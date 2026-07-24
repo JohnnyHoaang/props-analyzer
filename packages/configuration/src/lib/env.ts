@@ -7,7 +7,7 @@ import { z } from 'zod';
  */
 export const envSchema = z
   .object({
-    DATA_SOURCE: z.enum(['mock', 'postgres']).default('mock'),
+    DATA_SOURCE: z.enum(['mock', 'postgres', 'supabase']).default('mock'),
     DATABASE_URL: z
       .string()
       .min(1, 'DATABASE_URL is required when DATA_SOURCE=postgres')
