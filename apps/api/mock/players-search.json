@@ -1,0 +1,53 @@
+{
+    "data": [
+        {
+            "id": 73,
+            "first_name": "Jalen",
+            "last_name": "Brunson",
+            "position": "G",
+            "height": "6-2",
+            "weight": "190",
+            "jersey_number": "11",
+            "college": "Villanova",
+            "country": "USA",
+            "draft_year": 2018,
+            "draft_round": 2,
+            "draft_number": 33,
+            "team": {
+                "id": 20,
+                "conference": "East",
+                "division": "Atlantic",
+                "city": "New York",
+                "name": "Knicks",
+                "full_name": "New York Knicks",
+                "abbreviation": "NYK"
+            }
+        },
+        {
+            "id": 1125,
+            "first_name": "Rick",
+            "last_name": "Brunson",
+            "position": "",
+            "height": "6-4",
+            "weight": "190",
+            "jersey_number": "9",
+            "college": "Temple",
+            "country": "USA",
+            "draft_year": null,
+            "draft_round": null,
+            "draft_number": null,
+            "team": {
+                "id": 25,
+                "conference": "West",
+                "division": "Northwest",
+                "city": "Portland",
+                "name": "Trail Blazers",
+                "full_name": "Portland Trail Blazers",
+                "abbreviation": "POR"
+            }
+        }
+    ],
+    "meta": {
+        "per_page": 25
+    }
+}

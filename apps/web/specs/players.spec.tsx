@@ -58,7 +58,7 @@ describe('PlayersPage', () => {
     expect(screen.getByText('CAS')).toBeTruthy();
   });
 
-  it('passes filters from searchParams through to listPlayers', async () => {
+  it('passes filters, search, and pagination through to listPlayers', async () => {
     listPlayers.mockResolvedValue([]);
 
     const ui = await PlayersPage({
@@ -66,6 +66,8 @@ describe('PlayersPage', () => {
         teamId: 'team-a',
         position: 'PG',
         active: 'true',
+        search: 'jordan',
+        page: '2',
       }),
     });
     render(ui);
@@ -75,8 +77,28 @@ describe('PlayersPage', () => {
         teamId: 'team-a',
         position: 'PG',
         active: true,
+        search: 'jordan',
+        page: 2,
+        limit: 21,
       })
     );
+  });
+
+  it('renders pagination controls when another page exists', async () => {
+    listPlayers.mockResolvedValue(
+      Array.from({ length: 21 }, (_, index) =>
+        makePlayer({ id: `player-${index}`, fullName: `Player ${index}` })
+      )
+    );
+
+    const ui = await PlayersPage({ searchParams: Promise.resolve({}) });
+    render(ui);
+
+    expect(screen.getByText('Page 1')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Next' }).getAttribute('href')).toBe(
+      '/players?page=2'
+    );
+    expect(screen.queryByText('Player 20')).toBeNull();
   });
 
   it('renders an error state when the API call fails', async () => {

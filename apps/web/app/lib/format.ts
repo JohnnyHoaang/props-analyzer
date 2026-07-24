@@ -1,4 +1,13 @@
-import type { PlayerPosition } from '@props-analyzer/shared-types';
+import type { Conference, PlayerPosition } from '@props-analyzer/shared-types';
+
+const CONFERENCE_LABELS: Record<Conference, string> = {
+  EASTERN: 'Eastern',
+  WESTERN: 'Western',
+};
+
+export function formatConference(conference: Conference): string {
+  return CONFERENCE_LABELS[conference];
+}
 
 /** `PlayerDto.height` is stored in inches; render it the familiar way. */
 export function formatHeight(heightInInches: number): string {

@@ -27,16 +27,33 @@ export class PlayersService {
       ...(query.teamId ? { teamId: query.teamId } : {}),
       ...(query.position ? { position: query.position } : {}),
       ...(query.active !== undefined ? { active: query.active } : {}),
+      ...(query.search
+        ? {
+            fullName: {
+              contains: query.search,
+              mode: 'insensitive',
+            },
+          }
+        : {}),
     };
+
+    const limit = query.limit;
+    const paginationArgs =
+      query.cursor !== undefined
+        ? {
+            cursor: { id: query.cursor },
+            skip: 1,
+            ...(limit !== undefined ? { take: limit } : {}),
+          }
+        : limit !== undefined
+          ? { take: limit, skip: (query.page - 1) * limit }
+          : {};
 
     const players = (await this.db.player.findMany({
       where,
       include: { team: true },
       orderBy: { fullName: 'asc' },
-      take: query.limit,
-      ...(query.cursor
-        ? { cursor: { id: query.cursor }, skip: 1 }
-        : {}),
+      ...paginationArgs,
     })) as Array<Player & { team: Team }>;
 
     return players.map(toPlayerWithTeamDto);

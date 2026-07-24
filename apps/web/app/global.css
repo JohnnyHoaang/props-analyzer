@@ -85,3 +85,26 @@ body {
 .tabular {
   font-variant-numeric: tabular-nums;
 }
+
+/* Prop chart bars grow up from the baseline. Replayed (via a remount key) each
+   time the game window changes, so switching L5/L10/… animates the rebuild.
+   Per-bar animation-delay is set inline for the left-to-right stagger. */
+@keyframes bar-grow {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+.animate-bar-grow {
+  transform-origin: bottom;
+  animation: bar-grow 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-bar-grow {
+    animation: none;
+  }
+}

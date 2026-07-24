@@ -1,9 +1,9 @@
 import { listPlayersQuerySchema, playerGameLogQuerySchema } from './players.js';
 
 describe('listPlayersQuerySchema', () => {
-  it('applies pagination defaults when nothing is provided', () => {
+  it('leaves limit unset when nothing is provided so every player is returned', () => {
     const result = listPlayersQuerySchema.parse({});
-    expect(result).toEqual({ limit: 50 });
+    expect(result).toEqual({});
   });
 
   it('coerces string query params to the right types', () => {
@@ -28,8 +28,10 @@ describe('listPlayersQuerySchema', () => {
     ).toThrow();
   });
 
-  it('rejects a limit above the max', () => {
-    expect(() => listPlayersQuerySchema.parse({ limit: '1000' })).toThrow();
+  it('accepts a large limit since players are uncapped', () => {
+    expect(listPlayersQuerySchema.parse({ limit: '1000' })).toEqual({
+      limit: 1000,
+    });
   });
 });
 

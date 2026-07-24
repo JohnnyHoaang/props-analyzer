@@ -123,6 +123,25 @@ function matchesPlayerWhere(
     return false;
   }
 
+  if (where.fullName && typeof where.fullName === 'object') {
+    const fullNameFilter = where.fullName;
+
+    if ('contains' in fullNameFilter && typeof fullNameFilter.contains === 'string') {
+      const haystack =
+        fullNameFilter.mode === 'insensitive'
+          ? player.fullName.toLowerCase()
+          : player.fullName;
+      const needle =
+        fullNameFilter.mode === 'insensitive'
+          ? fullNameFilter.contains.toLowerCase()
+          : fullNameFilter.contains;
+
+      if (!haystack.includes(needle)) {
+        return false;
+      }
+    }
+  }
+
   return true;
 }
 

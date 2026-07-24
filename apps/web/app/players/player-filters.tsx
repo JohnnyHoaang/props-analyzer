@@ -5,6 +5,7 @@ export interface PlayerFiltersValue {
   teamId?: string;
   position?: string;
   active?: string;
+  search?: string;
 }
 
 /**
@@ -24,6 +25,19 @@ export function PlayerFilters({
       action="/players"
       className="flex flex-wrap items-end gap-4 rounded-xl border border-line-800 bg-ink-800 p-4"
     >
+      <label className="flex min-w-[12rem] flex-1 flex-col gap-1.5 text-sm">
+        <span className="text-xs font-bold uppercase tracking-widest text-slate-500">
+          Search
+        </span>
+        <input
+          type="search"
+          name="search"
+          defaultValue={value.search ?? ''}
+          placeholder="Player name"
+          className="rounded-lg border border-line-700 bg-ink-750 px-3 py-1.5 text-slate-200 placeholder:text-slate-600 focus:border-azure-500 focus:outline-none"
+        />
+      </label>
+
       <label className="flex flex-col gap-1.5 text-sm">
         <span className="text-xs font-bold uppercase tracking-widest text-slate-500">
           Team

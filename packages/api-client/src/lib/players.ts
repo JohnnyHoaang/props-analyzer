@@ -10,7 +10,9 @@ export interface ListPlayersOptions extends ApiRequestOptions {
   teamId?: string;
   position?: PlayerPosition;
   active?: boolean;
+  search?: string;
   limit?: number;
+  page?: number;
   cursor?: string;
 }
 
@@ -18,11 +20,12 @@ export interface ListPlayersOptions extends ApiRequestOptions {
 export function listPlayers(
   options: ListPlayersOptions = {}
 ): Promise<PlayerWithTeamDto[]> {
-  const { teamId, position, active, limit, cursor, ...rest } = options;
+  const { teamId, position, active, search, limit, page, cursor, ...rest } =
+    options;
 
   return apiFetch<PlayerWithTeamDto[]>('/players', {
     ...rest,
-    query: { teamId, position, active, limit, cursor },
+    query: { teamId, position, active, search, limit, page, cursor },
   });
 }
 

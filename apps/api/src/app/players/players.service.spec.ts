@@ -99,25 +99,46 @@ describe('PlayersService', () => {
 
       const result = await service.findAll({
         limit: 50,
+        page: 1,
         teamId: 'team-cascade',
         position: 'PG',
         active: true,
+        search: 'deshawn',
       });
 
       expect(dbMock.player.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { teamId: 'team-cascade', position: 'PG', active: true },
+          where: {
+            teamId: 'team-cascade',
+            position: 'PG',
+            active: true,
+            fullName: { contains: 'deshawn', mode: 'insensitive' },
+          },
           take: 50,
+          skip: 0,
         })
       );
       expect(result).toHaveLength(1);
       expect(result[0].team.abbreviation).toBe('CAS');
     });
 
+    it('applies page-based pagination when a page is provided', async () => {
+      dbMock.player.findMany.mockResolvedValue([]);
+
+      await service.findAll({ limit: 10, page: 3 });
+
+      expect(dbMock.player.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          take: 10,
+          skip: 20,
+        })
+      );
+    });
+
     it('applies cursor pagination when a cursor is provided', async () => {
       dbMock.player.findMany.mockResolvedValue([]);
 
-      await service.findAll({ limit: 10, cursor: 'player-cascade-1' });
+      await service.findAll({ limit: 10, page: 1, cursor: 'player-cascade-1' });
 
       expect(dbMock.player.findMany).toHaveBeenCalledWith(
         expect.objectContaining({

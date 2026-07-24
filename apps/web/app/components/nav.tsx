@@ -53,6 +53,7 @@ export function Nav() {
           </Link>
           <nav className="flex items-center gap-6">
             <NavLink href="/">Dashboard</NavLink>
+            <NavLink href="/teams">Teams</NavLink>
             <NavLink href="/players">Players</NavLink>
           </nav>
         </div>
