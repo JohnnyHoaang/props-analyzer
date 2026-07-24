@@ -88,6 +88,12 @@ export interface PropGameDto {
   date: string;
   opponentAbbreviation: string;
   isHome: boolean;
+  /**
+   * Final score margin from the player's team perspective: positive means the
+   * team won by that many, negative means it lost by that many. Powers the
+   * blowout filter (e.g. exclude games decided by 20+).
+   */
+  margin: number;
   value: number;
 }
 

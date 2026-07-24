@@ -44,6 +44,55 @@ export function summarizeWindow(
   };
 }
 
+/** Game-context filters applied to a market's series before analysis. Only
+ * location for now, but modeled as a value so more filters can join later. */
+export type GameLocationFilter = 'all' | 'home' | 'away';
+
+/** Narrow a market's games to home or away (or leave them all). Preserves the
+ * chronological order, so downstream "last N" windowing is unaffected. */
+export function filterGamesByLocation(
+  games: PropGameDto[],
+  location: GameLocationFilter
+): PropGameDto[] {
+  if (location === 'all') {
+    return games;
+  }
+  return games.filter((game) => game.isHome === (location === 'home'));
+}
+
+/** Blowout exclusion: drop games decided by a lopsided margin so they don't
+ * skew the analysis. Losses/wins are from the player's team perspective. */
+export type BlowoutFilter =
+  | 'all'
+  | 'exclude-losses'
+  | 'exclude-wins'
+  | 'exclude-both';
+
+/** A game counts as a blowout when the final margin reaches this many points. */
+export const BLOWOUT_MARGIN = 20;
+
+/** Exclude blowout wins and/or losses (games where |margin| >= BLOWOUT_MARGIN).
+ * Preserves chronological order. */
+export function filterGamesByBlowout(
+  games: PropGameDto[],
+  filter: BlowoutFilter
+): PropGameDto[] {
+  if (filter === 'all') {
+    return games;
+  }
+  return games.filter((game) => {
+    const isBlowoutWin = game.margin >= BLOWOUT_MARGIN;
+    const isBlowoutLoss = game.margin <= -BLOWOUT_MARGIN;
+    if (filter === 'exclude-wins') {
+      return !isBlowoutWin;
+    }
+    if (filter === 'exclude-losses') {
+      return !isBlowoutLoss;
+    }
+    return !isBlowoutWin && !isBlowoutLoss; // exclude-both
+  });
+}
+
 export type EvidenceLevel = 'High' | 'Moderate' | 'Limited' | 'Insufficient';
 
 /**
