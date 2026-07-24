@@ -292,10 +292,19 @@ importers:
       '@prisma/client':
         specifier: ^6.19.3
         version: 6.19.3(prisma@6.19.3(typescript@6.0.3))(typescript@6.0.3)
+      '@supabase/supabase-js':
+        specifier: ^2.110.8
+        version: 2.110.8
       tslib:
         specifier: ^2.3.0
         version: 2.8.1
+      ws:
+        specifier: ^8.21.1
+        version: 8.21.1
     devDependencies:
+      '@types/ws':
+        specifier: ^8.18.1
+        version: 8.18.1
       dotenv:
         specifier: ^17.4.2
         version: 17.4.2
