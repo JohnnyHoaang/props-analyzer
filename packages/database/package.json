@@ -39,6 +39,7 @@
     "db:export-mock-data": "tsx scripts/export-mock-data.ts",
     "db:wipe-players": "tsx scripts/wipe-players.ts",
     "db:load-bdl": "tsx scripts/load-bdl-data.ts",
-    "db:seed-fake-props": "tsx scripts/seed-fake-props.ts"
+    "db:seed-fake-props": "tsx scripts/seed-fake-props.ts",
+    "db:gen-types": "supabase gen types typescript --local > src/supabase/types.ts"
   }
 }
