@@ -9,4 +9,3 @@ export * from './lineups.js';
 export * from './prop-lines.js';
 export * from './types.js';
 export * from './load-mock-data.js';
-export * from './mock-data-client.js';

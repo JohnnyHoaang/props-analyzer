@@ -87,7 +87,6 @@
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
     "@nestjs/swagger": "^11.4.6",
-    "@prisma/client": "6.19.3",
     "@props-analyzer/configuration": "workspace:*",
     "@props-analyzer/database": "workspace:*",
     "@props-analyzer/shared-types": "workspace:*",

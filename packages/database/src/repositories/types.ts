@@ -8,7 +8,7 @@ import type {
   PropLine,
   Team,
   User,
-} from '@prisma/client';
+} from '../entity-types.js';
 
 /** Entities joined with their related rows, as the API mappers expect them. */
 export type PlayerWithTeam = Player & { team: Team };

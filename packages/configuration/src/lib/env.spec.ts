@@ -3,14 +3,11 @@ import { loadEnv } from './env.js';
 describe('loadEnv', () => {
   it('parses a valid environment subset', () => {
     const env = loadEnv(
-      {
-        DATABASE_URL: 'postgresql://user:pass@localhost:5432/db',
-        API_PORT: '3333',
-      },
-      ['DATABASE_URL', 'API_PORT']
+      { DATA_SOURCE: 'supabase', API_PORT: '3333' },
+      ['DATA_SOURCE', 'API_PORT']
     );
 
-    expect(env.DATABASE_URL).toBe('postgresql://user:pass@localhost:5432/db');
+    expect(env.DATA_SOURCE).toBe('supabase');
     expect(env.API_PORT).toBe(3333);
   });
 
@@ -20,13 +17,13 @@ describe('loadEnv', () => {
     expect(env.API_PORT).toBe(3333);
   });
 
-  it('throws a readable error when postgres mode lacks DATABASE_URL', () => {
-    expect(() =>
-      loadEnv({ DATA_SOURCE: 'postgres' }, ['DATA_SOURCE', 'DATABASE_URL'])
-    ).toThrow(/DATABASE_URL/);
+  it('rejects an unknown DATA_SOURCE', () => {
+    expect(() => loadEnv({ DATA_SOURCE: 'postgres' }, ['DATA_SOURCE'])).toThrow(
+      /DATA_SOURCE/
+    );
   });
 
-  it('defaults DATA_SOURCE to mock so DATABASE_URL is optional', () => {
+  it('defaults DATA_SOURCE to mock', () => {
     const env = loadEnv({}, ['DATA_SOURCE', 'API_PORT']);
 
     expect(env.DATA_SOURCE).toBe('mock');

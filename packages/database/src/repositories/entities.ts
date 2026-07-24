@@ -5,7 +5,7 @@ import type {
   PropLine,
   Team,
   User,
-} from '@prisma/client';
+} from '../entity-types.js';
 import type { Database } from '../supabase/types.js';
 
 /**

@@ -44,8 +44,7 @@ export interface PropLineFixture {
 
 /**
  * Mirror of `statValueForType` in @props-analyzer/shared-types. Inlined here
- * because packages/database only depends on @prisma/client, and pulling in a
- * cross-package dependency for an 11-case sum isn't worth it. Keep the two in
+ * to avoid a cross-package dependency for an 11-case sum. Keep the two in
  * sync if a market is added.
  */
 function statValue(
