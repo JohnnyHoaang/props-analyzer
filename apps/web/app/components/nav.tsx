@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import { getCurrentUser } from '@props-analyzer/api-client';
+import { MobileMenu } from './mobile-menu';
+import { NAV_LINKS } from './nav-links';
 
 /**
  * Authentication is deferred in Phase 1 (see AGENTS.md workflow notes), so
@@ -40,8 +42,8 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
 
 export function Nav() {
   return (
-    <header className="sticky top-0 z-10 border-b border-line-800 bg-ink-850/95 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+    <header className="sticky top-0 z-20 border-b border-line-800 bg-ink-850/95 backdrop-blur">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
         <div className="flex items-center gap-8">
           <Link href="/" className="group flex items-baseline gap-0.5">
             <span className="font-display text-xl font-extrabold italic tracking-tight text-white">
@@ -51,13 +53,18 @@ export function Nav() {
               Analyzer
             </span>
           </Link>
-          <nav className="flex items-center gap-6">
-            <NavLink href="/">Dashboard</NavLink>
-            <NavLink href="/teams">Teams</NavLink>
-            <NavLink href="/players">Players</NavLink>
+          <nav className="hidden items-center gap-6 md:flex">
+            {NAV_LINKS.map((link) => (
+              <NavLink key={link.href} href={link.href}>
+                {link.label}
+              </NavLink>
+            ))}
           </nav>
         </div>
-        <CurrentUserBadge />
+        <div className="flex items-center gap-3">
+          <CurrentUserBadge />
+          <MobileMenu />
+        </div>
       </div>
       <div className="h-0.5 w-full bg-gradient-to-r from-azure-500 via-azure-400 to-gold-500" />
     </header>

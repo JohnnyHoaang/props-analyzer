@@ -79,11 +79,11 @@ export default async function PlayerDetailPage({
 
       <div className="relative overflow-hidden rounded-2xl border border-line-800 bg-ink-800">
         <div
-          className="absolute inset-y-0 left-0 w-64 bg-gradient-to-br from-azure-500 to-ink-900"
+          className="absolute inset-y-0 left-0 w-40 bg-gradient-to-br from-azure-500 to-ink-900 sm:w-64"
           style={{ clipPath: 'polygon(0 0, 85% 0, 60% 100%, 0 100%)' }}
         />
-        <div className="relative flex flex-wrap items-center gap-6 px-8 py-8">
-          <div className="flex h-28 w-28 shrink-0 items-center justify-center rounded-full border-4 border-ink-800 bg-ink-900 font-display text-3xl font-extrabold text-white shadow-lg">
+        <div className="relative flex flex-wrap items-center gap-4 px-5 py-6 sm:gap-6 sm:px-8 sm:py-8">
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-4 border-ink-800 bg-ink-900 font-display text-2xl font-extrabold text-white shadow-lg sm:h-28 sm:w-28 sm:text-3xl">
             {player.fullName
               .split(' ')
               .map((part) => part.charAt(0))
@@ -95,7 +95,7 @@ export default async function PlayerDetailPage({
               Player Profile
             </span>
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="font-display text-3xl font-extrabold tracking-tight text-white">
+              <h1 className="font-display text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
                 {player.fullName}
               </h1>
               {player.active ? (

@@ -1,5 +1,6 @@
 import type { PropGameDto } from '@props-analyzer/shared-types';
 import {
+  balancedChartPageSize,
   chartAxisLabelIndices,
   chartPageCount,
   chartPageSlice,
@@ -151,5 +152,23 @@ describe('chart pagination', () => {
   it('hides pagination for small windows', () => {
     expect(chartPageCount(15)).toBe(1);
     expect(defaultChartPageIndex(15)).toBe(0);
+  });
+
+  it('balances mobile page size to avoid a lonely last page', () => {
+    // Fits on one page → full cap, single page.
+    expect(balancedChartPageSize(5, 8)).toBe(8);
+    expect(chartPageCount(5, balancedChartPageSize(5, 8))).toBe(1);
+
+    // 15 games would leave 1 bar at a flat 8/page; balance to 8 + 7 instead.
+    const size15 = balancedChartPageSize(15, 8);
+    expect(size15).toBe(8);
+    expect(chartPageCount(15, size15)).toBe(2);
+    const games15 = Array.from({ length: 15 }, (_, index) => game(index + 1));
+    expect(chartPageSlice(games15, 0, size15)).toHaveLength(8);
+    expect(chartPageSlice(games15, 1, size15)).toHaveLength(7);
+
+    // 10 and 20 split into even pages (5+5, 7+7+6) — never a single-bar page.
+    expect(balancedChartPageSize(10, 8)).toBe(5);
+    expect(balancedChartPageSize(20, 8)).toBe(7);
   });
 });

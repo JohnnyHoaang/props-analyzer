@@ -8,18 +8,43 @@ import {
   formatAmericanOdds,
 } from '@props-analyzer/shared-types';
 import {
+  balancedChartPageSize,
   chartPageCount,
   chartPageSlice,
+  CHART_GAMES_PER_PAGE,
   defaultChartPageIndex,
   evidenceLevel,
   formatChartAxisDate,
   formatChartPageRange,
   gamesSpanMultipleYears,
+  MOBILE_CHART_GAMES_PER_PAGE,
   shouldShowChartAxisLabel,
   summarizeWindow,
   windowOptions,
   type EvidenceLevel,
 } from './prop-stats';
+
+/**
+ * Tracks whether the viewport is phone-sized so the chart can page through
+ * fewer, wider bars there. SSR-safe: renders desktop-first, then corrects
+ * after mount (and on resize / orientation change).
+ */
+function useIsMobile(): boolean {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') {
+      return;
+    }
+    const query = window.matchMedia('(max-width: 639px)');
+    const update = () => setIsMobile(query.matches);
+    update();
+    query.addEventListener('change', update);
+    return () => query.removeEventListener('change', update);
+  }, []);
+
+  return isMobile;
+}
 
 function formatPct(rate: number): string {
   return `${(rate * 100).toFixed(1)}%`;
@@ -70,7 +95,7 @@ function SummaryStat({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-1 border-l border-line-800 pl-4 first:border-0 first:pl-0">
+    <div className="flex flex-col gap-1 sm:border-l sm:border-line-800 sm:pl-4 sm:first:border-0 sm:first:pl-0">
       <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
         {label}
       </span>
@@ -135,7 +160,7 @@ function ChartPager({
         onClick={onPrevious}
         disabled={pageIndex === 0}
         aria-label="Previous games"
-        className="rounded-md border border-line-700 px-2.5 py-1 text-xs font-bold text-slate-300 transition-colors hover:border-line-700 hover:bg-ink-750 disabled:cursor-not-allowed disabled:opacity-40"
+        className="rounded-md border border-line-700 px-3 py-1.5 text-xs font-bold text-slate-300 transition-colors hover:border-line-700 hover:bg-ink-750 disabled:cursor-not-allowed disabled:opacity-40"
       >
         Previous
       </button>
@@ -147,7 +172,7 @@ function ChartPager({
         onClick={onNext}
         disabled={pageIndex >= pageCount - 1}
         aria-label="Next games"
-        className="rounded-md border border-line-700 px-2.5 py-1 text-xs font-bold text-slate-300 transition-colors hover:border-line-700 hover:bg-ink-750 disabled:cursor-not-allowed disabled:opacity-40"
+        className="rounded-md border border-line-700 px-3 py-1.5 text-xs font-bold text-slate-300 transition-colors hover:border-line-700 hover:bg-ink-750 disabled:cursor-not-allowed disabled:opacity-40"
       >
         Next
       </button>
@@ -177,6 +202,7 @@ export function PropAnalysis({
   const options = useMemo(() => windowOptions(totalGames), [totalGames]);
   const defaultWindow = options.includes(15) ? 15 : options[options.length - 1];
 
+  const isMobile = useIsMobile();
   const [timeframe, setTimeframe] = useState(defaultWindow);
   const [chartPage, setChartPage] = useState(0);
   const [altLine, setAltLine] = useState(selected.line);
@@ -197,20 +223,35 @@ export function PropAnalysis({
     [selected.games, timeframe]
   );
 
-  const pageCount = chartPageCount(windowGames.length);
-
-  // Jump to the most recent page whenever the timeframe changes.
-  useEffect(() => {
-    setChartPage(defaultChartPageIndex(windowGames.length));
-    setHovered(null);
-  }, [timeframe, windowGames.length]);
-
-  const visibleGames = useMemo(
-    () => chartPageSlice(windowGames, chartPage),
-    [windowGames, chartPage]
+  // On phones, spread the window across more pages of fewer, wider bars so
+  // they stay readable and tappable; keep the roomy 20/page on larger screens.
+  const pageSize = useMemo(
+    () =>
+      isMobile
+        ? balancedChartPageSize(windowGames.length, MOBILE_CHART_GAMES_PER_PAGE)
+        : CHART_GAMES_PER_PAGE,
+    [isMobile, windowGames.length]
   );
 
-  const pageRangeLabel = formatChartPageRange(chartPage, windowGames.length);
+  const pageCount = chartPageCount(windowGames.length, pageSize);
+
+  // Jump to the most recent page whenever the timeframe (or page size, e.g. on
+  // a rotate/resize across the mobile breakpoint) changes.
+  useEffect(() => {
+    setChartPage(defaultChartPageIndex(windowGames.length, pageSize));
+    setHovered(null);
+  }, [timeframe, windowGames.length, pageSize]);
+
+  const visibleGames = useMemo(
+    () => chartPageSlice(windowGames, chartPage, pageSize),
+    [windowGames, chartPage, pageSize]
+  );
+
+  const pageRangeLabel = formatChartPageRange(
+    chartPage,
+    windowGames.length,
+    pageSize
+  );
 
   const includeYearOnAxis = useMemo(
     () => gamesSpanMultipleYears(visibleGames),
@@ -225,7 +266,22 @@ export function PropAnalysis({
   const label = STAT_TYPE_LABELS[selected.statType];
   const isAltLine = altLine !== selected.line;
 
-  const sliderMax = Math.max(4, Math.ceil(atAltLine.max * 1.1));
+  // Slider tops out just above the window's biggest result, but never below
+  // the consensus line — so the line the alt line resets to is always in range.
+  const sliderMax = Math.max(
+    4,
+    Math.ceil(Math.max(atAltLine.max, selected.line) * 1.1)
+  );
+
+  // Changing the timeframe can shrink the window to games that never reach the
+  // current alt line (e.g. leaving the full-season window for a recent-games
+  // one). When that happens the line would sit off the top of the chart with
+  // the slider pinned, so snap it back to the consensus/prop line.
+  useEffect(() => {
+    if (altLine > sliderMax) {
+      setAltLine(selected.line);
+    }
+  }, [altLine, sliderMax, selected.line]);
 
   // Scale is fixed by the data and the slider's full range, NOT the live alt
   // line — so dragging the slider glides the reference line without rescaling
@@ -258,7 +314,7 @@ export function PropAnalysis({
       </h2>
 
       {/* Summary row */}
-      <div className="flex flex-wrap gap-6 rounded-xl border border-line-800 bg-ink-800 px-6 py-5">
+      <div className="grid grid-cols-2 gap-4 rounded-xl border border-line-800 bg-ink-800 px-5 py-4 sm:flex sm:flex-wrap sm:gap-6 sm:px-6 sm:py-5">
         <SummaryStat label="Consensus Line">
           <span className="tabular">{selected.line}</span>{' '}
           <span className="text-xs font-medium text-slate-400">
@@ -284,7 +340,7 @@ export function PropAnalysis({
       </div>
 
       {/* Chart card */}
-      <div className="rounded-xl border border-line-800 bg-ink-800 p-6">
+      <div className="rounded-xl border border-line-800 bg-ink-800 p-4 sm:p-6">
         <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
           <div>
             <h3 className="font-display text-lg font-bold text-white">
@@ -308,9 +364,14 @@ export function PropAnalysis({
             onChange={(n) => {
               setHovered(null);
               setTimeframe(n);
-              setChartPage(
-                defaultChartPageIndex(Math.min(n, selected.games.length))
-              );
+              const nextLength = Math.min(n, selected.games.length);
+              const nextPageSize = isMobile
+                ? balancedChartPageSize(
+                    nextLength,
+                    MOBILE_CHART_GAMES_PER_PAGE
+                  )
+                : CHART_GAMES_PER_PAGE;
+              setChartPage(defaultChartPageIndex(nextLength, nextPageSize));
             }}
           />
         </div>
@@ -335,7 +396,7 @@ export function PropAnalysis({
           <div>
             <div className="flex gap-3">
               {/* y axis */}
-              <div className="relative h-64 w-9 shrink-0">
+              <div className="relative h-56 w-9 shrink-0 sm:h-64">
                 {ticks.map((t, i) => (
                   <span
                     key={t}
@@ -348,7 +409,7 @@ export function PropAnalysis({
               </div>
 
               {/* plot area */}
-              <div className="relative h-64 flex-1">
+              <div className="relative h-56 flex-1 sm:h-64">
                 {/* gridlines */}
                 {ticks.map((t, i) => (
                   <div
@@ -385,6 +446,9 @@ export function PropAnalysis({
                   key={`${timeframe}-${chartPage}`}
                   className="absolute inset-0 flex items-end gap-1.5"
                   onMouseLeave={() => setHovered(null)}
+                  // Tapping empty space between/around bars dismisses the
+                  // touch-opened tooltip.
+                  onClick={() => setHovered(null)}
                 >
                   {visibleGames.map((game, index) => {
                     const isOver = game.value > altLine;
@@ -398,7 +462,15 @@ export function PropAnalysis({
                       <div
                         key={`${game.gameId}-${index}`}
                         onMouseEnter={() => setHovered(index)}
-                        className="relative flex h-full min-w-0 flex-1 items-end"
+                        // Tap toggles this bar's tooltip (touch has no hover);
+                        // stop the tap from bubbling to the dismiss handler.
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setHovered((current) =>
+                            current === index ? null : index
+                          );
+                        }}
+                        className="relative flex h-full min-w-0 flex-1 cursor-pointer items-end"
                       >
                         <div
                           className="animate-bar-grow w-full rounded-t-[4px] transition-[height,background-color,opacity] duration-200 ease-out"
@@ -435,7 +507,7 @@ export function PropAnalysis({
 
                     return (
                       <div
-                        className="pointer-events-none absolute top-2 z-30 w-56 rounded-xl border border-line-700 bg-ink-950/95 p-3 shadow-xl"
+                        className="pointer-events-none absolute top-2 z-30 w-[70vw] max-w-56 rounded-xl border border-line-700 bg-ink-950/95 p-3 shadow-xl"
                         style={{ left: `${leftPct}%`, transform }}
                       >
                         <div className="flex items-center justify-between border-b border-line-800 pb-2">
@@ -528,7 +600,7 @@ export function PropAnalysis({
         </div>
 
         {/* Legend + alt line */}
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-6 border-t border-line-800 pt-5">
+        <div className="mt-6 flex flex-col items-start gap-5 border-t border-line-800 pt-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-6">
           <div className="flex items-center gap-4 text-xs text-slate-400">
             <span className="flex items-center gap-1.5">
               <span
@@ -546,7 +618,7 @@ export function PropAnalysis({
             </span>
           </div>
 
-          <div className="flex flex-1 items-center gap-4">
+          <div className="flex w-full items-center gap-4 sm:flex-1">
             <div className="flex flex-col">
               <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
                 Alt Line

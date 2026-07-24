@@ -99,8 +99,8 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
         ) : players.length === 0 ? (
           <p className="text-sm text-slate-500">No players on this roster.</p>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-line-800 bg-ink-800">
-            <table className="w-full text-left text-sm">
+          <div className="overflow-x-auto rounded-xl border border-line-800 bg-ink-800">
+            <table className="w-full min-w-[32rem] text-left text-sm">
               <thead className="border-b border-line-800 text-xs font-bold uppercase tracking-widest text-slate-500">
                 <tr>
                   <th className="px-4 py-3">Name</th>

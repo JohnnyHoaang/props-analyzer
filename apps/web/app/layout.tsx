@@ -22,6 +22,11 @@ export const metadata = {
     'Browse NBA players and completed game logs (mock data, Phase 1).',
 };
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -31,7 +36,7 @@ export default function RootLayout({
     <html lang="en" className={`${sora.variable} ${manrope.variable}`}>
       <body className="min-h-screen font-body text-slate-100 antialiased">
         <Nav />
-        <main className="mx-auto max-w-6xl px-6 py-10">{children}</main>
+        <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">{children}</main>
       </body>
     </html>
   );

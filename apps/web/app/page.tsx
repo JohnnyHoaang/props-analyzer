@@ -50,7 +50,6 @@ export default async function DashboardPage() {
           Dashboard
         </h1>
         <p className="mt-2 text-slate-400">
-          Mock data for Phase 1 — no live tracking, completed games only.{' '}
           <Link href="/players" className="font-semibold text-azure-400 hover:text-azure-300">
             Browse players →
           </Link>

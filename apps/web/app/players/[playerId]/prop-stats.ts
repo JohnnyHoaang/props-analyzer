@@ -156,6 +156,28 @@ export function shouldShowChartAxisLabel(
  * scroll so hover tooltips stay aligned with their columns. */
 export const CHART_GAMES_PER_PAGE = 20;
 
+/** Upper bound on games per chart page on small (phone) screens, where 20
+ * fluid bars become hair-thin and their date labels collide. */
+export const MOBILE_CHART_GAMES_PER_PAGE = 8;
+
+/**
+ * Choose a page size that spreads `count` games across the fewest pages while
+ * staying at or below `maxPerPage`, keeping every page roughly equal. This
+ * avoids a lonely last page (e.g. 15 games at a flat 8/page would leave the
+ * most recent page showing a single bar): 15 → 2 pages of 8 and 7 instead.
+ * Returns `maxPerPage` when everything already fits on one page.
+ */
+export function balancedChartPageSize(
+  count: number,
+  maxPerPage: number
+): number {
+  if (count <= maxPerPage) {
+    return maxPerPage;
+  }
+  const pages = Math.ceil(count / maxPerPage);
+  return Math.ceil(count / pages);
+}
+
 export function chartPageCount(
   gameCount: number,
   pageSize = CHART_GAMES_PER_PAGE

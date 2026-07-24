@@ -25,7 +25,7 @@ export function PlayerFilters({
       action="/players"
       className="flex flex-wrap items-end gap-4 rounded-xl border border-line-800 bg-ink-800 p-4"
     >
-      <label className="flex min-w-[12rem] flex-1 flex-col gap-1.5 text-sm">
+      <label className="flex w-full flex-col gap-1.5 text-sm sm:min-w-[12rem] sm:flex-1">
         <span className="text-xs font-bold uppercase tracking-widest text-slate-500">
           Search
         </span>
@@ -38,7 +38,7 @@ export function PlayerFilters({
         />
       </label>
 
-      <label className="flex flex-col gap-1.5 text-sm">
+      <label className="flex w-full flex-col gap-1.5 text-sm sm:w-auto">
         <span className="text-xs font-bold uppercase tracking-widest text-slate-500">
           Team
         </span>
@@ -56,7 +56,7 @@ export function PlayerFilters({
         </select>
       </label>
 
-      <label className="flex flex-col gap-1.5 text-sm">
+      <label className="flex w-full flex-col gap-1.5 text-sm sm:w-auto">
         <span className="text-xs font-bold uppercase tracking-widest text-slate-500">
           Position
         </span>
@@ -87,7 +87,7 @@ export function PlayerFilters({
 
       <button
         type="submit"
-        className="rounded-lg bg-azure-500 px-5 py-1.5 text-sm font-bold text-white transition-colors hover:bg-azure-600"
+        className="w-full rounded-lg bg-azure-500 px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-azure-600 sm:w-auto sm:py-1.5"
       >
         Apply
       </button>

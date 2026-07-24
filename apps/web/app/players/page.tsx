@@ -110,8 +110,8 @@ export default async function PlayersPage({ searchParams }: PlayersPageProps) {
         <p className="text-sm text-slate-500">No players match those filters.</p>
       ) : (
         <>
-          <div className="overflow-hidden rounded-xl border border-line-800 bg-ink-800">
-            <table className="w-full text-left text-sm">
+          <div className="overflow-x-auto rounded-xl border border-line-800 bg-ink-800">
+            <table className="w-full min-w-[36rem] text-left text-sm">
               <thead className="border-b border-line-800 text-xs font-bold uppercase tracking-widest text-slate-500">
                 <tr>
                   <th className="px-4 py-3">Name</th>
