@@ -49,7 +49,7 @@ describe('TeamsPage', () => {
     expect(screen.getByText('Western Conference')).toBeTruthy();
     expect(screen.getByText('Cascade Timber')).toBeTruthy();
     expect(screen.getByText('Harbor City')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Cascade Timber' }).getAttribute('href')).toBe(
+    expect(screen.getByRole('link', { name: /Cascade Timber/i }).getAttribute('href')).toBe(
       '/teams/team-a'
     );
     expect(screen.queryByText('Jordan Rivers')).toBeNull();

@@ -8,22 +8,18 @@ import {
   formatAmericanOdds,
 } from '@props-analyzer/shared-types';
 import {
+  chartPageCount,
+  chartPageSlice,
+  defaultChartPageIndex,
   evidenceLevel,
+  formatChartAxisDate,
+  formatChartPageRange,
+  gamesSpanMultipleYears,
+  shouldShowChartAxisLabel,
   summarizeWindow,
   windowOptions,
   type EvidenceLevel,
 } from './prop-stats';
-
-function formatChartDate(iso: string): string {
-  const date = new Date(iso);
-  return `${date.getMonth() + 1}/${date.getDate()}`;
-}
-
-function formatTooltipDate(iso: string): string {
-  const date = new Date(iso);
-  const yy = String(date.getFullYear()).slice(-2);
-  return `${date.getMonth() + 1}/${date.getDate()}/${yy}`;
-}
 
 function formatPct(rate: number): string {
   return `${(rate * 100).toFixed(1)}%`;
@@ -114,6 +110,51 @@ function Segmented({
   );
 }
 
+function ChartPager({
+  pageIndex,
+  pageCount,
+  rangeLabel,
+  onPrevious,
+  onNext,
+}: {
+  pageIndex: number;
+  pageCount: number;
+  rangeLabel: string;
+  onPrevious: () => void;
+  onNext: () => void;
+}) {
+  if (pageCount <= 1) {
+    return null;
+  }
+
+  return (
+    <div className="mb-4 flex items-center justify-end gap-2">
+      <span className="tabular text-xs text-slate-500">{rangeLabel}</span>
+      <button
+        type="button"
+        onClick={onPrevious}
+        disabled={pageIndex === 0}
+        aria-label="Previous games"
+        className="rounded-md border border-line-700 px-2.5 py-1 text-xs font-bold text-slate-300 transition-colors hover:border-line-700 hover:bg-ink-750 disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        Previous
+      </button>
+      <span className="tabular text-xs font-semibold text-slate-400">
+        {pageIndex + 1} / {pageCount}
+      </span>
+      <button
+        type="button"
+        onClick={onNext}
+        disabled={pageIndex >= pageCount - 1}
+        aria-label="Next games"
+        className="rounded-md border border-line-700 px-2.5 py-1 text-xs font-bold text-slate-300 transition-colors hover:border-line-700 hover:bg-ink-750 disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        Next
+      </button>
+    </div>
+  );
+}
+
 export function PropAnalysis({
   playerName,
   propLines,
@@ -137,6 +178,7 @@ export function PropAnalysis({
   const defaultWindow = options.includes(15) ? 15 : options[options.length - 1];
 
   const [timeframe, setTimeframe] = useState(defaultWindow);
+  const [chartPage, setChartPage] = useState(0);
   const [altLine, setAltLine] = useState(selected.line);
   const [hovered, setHovered] = useState<number | null>(null);
 
@@ -153,6 +195,26 @@ export function PropAnalysis({
   const windowGames = useMemo(
     () => selected.games.slice(-timeframe),
     [selected.games, timeframe]
+  );
+
+  const pageCount = chartPageCount(windowGames.length);
+
+  // Jump to the most recent page whenever the timeframe changes.
+  useEffect(() => {
+    setChartPage(defaultChartPageIndex(windowGames.length));
+    setHovered(null);
+  }, [timeframe, windowGames.length]);
+
+  const visibleGames = useMemo(
+    () => chartPageSlice(windowGames, chartPage),
+    [windowGames, chartPage]
+  );
+
+  const pageRangeLabel = formatChartPageRange(chartPage, windowGames.length);
+
+  const includeYearOnAxis = useMemo(
+    () => gamesSpanMultipleYears(visibleGames),
+    [visibleGames]
   );
 
   const atAltLine = summarizeWindow(windowGames, altLine);
@@ -246,13 +308,31 @@ export function PropAnalysis({
             onChange={(n) => {
               setHovered(null);
               setTimeframe(n);
+              setChartPage(
+                defaultChartPageIndex(Math.min(n, selected.games.length))
+              );
             }}
           />
         </div>
 
-        {/* Plot */}
-        <div className="overflow-x-auto">
-          <div className="min-w-[640px]">
+        <ChartPager
+          pageIndex={chartPage}
+          pageCount={pageCount}
+          rangeLabel={pageRangeLabel}
+          onPrevious={() => {
+            setHovered(null);
+            setChartPage((current) => Math.max(0, current - 1));
+          }}
+          onNext={() => {
+            setHovered(null);
+            setChartPage((current) => Math.min(pageCount - 1, current + 1));
+          }}
+        />
+
+        {/* Plot — no horizontal scroll; paginate instead so tooltips stay
+            aligned with bar columns. */}
+        <div>
+          <div>
             <div className="flex gap-3">
               {/* y axis */}
               <div className="relative h-64 w-9 shrink-0">
@@ -302,23 +382,23 @@ export function PropAnalysis({
                 {/* bars — keyed by timeframe so switching the game window
                     remounts them and replays the grow-up animation. */}
                 <div
-                  key={timeframe}
+                  key={`${timeframe}-${chartPage}`}
                   className="absolute inset-0 flex items-end gap-1.5"
                   onMouseLeave={() => setHovered(null)}
                 >
-                  {windowGames.map((game, index) => {
+                  {visibleGames.map((game, index) => {
                     const isOver = game.value > altLine;
                     const heightPct = (game.value / niceMax) * 100;
                     const dimmed = hovered !== null && hovered !== index;
                     // Bounded left-to-right stagger: total sweep stays ~250ms
                     // regardless of how many games are in the window.
                     const delayMs =
-                      (index / Math.max(windowGames.length - 1, 1)) * 250;
+                      (index / Math.max(visibleGames.length - 1, 1)) * 250;
                     return (
                       <div
                         key={`${game.gameId}-${index}`}
                         onMouseEnter={() => setHovered(index)}
-                        className="relative flex h-full min-w-[24px] flex-1 items-end"
+                        className="relative flex h-full min-w-0 flex-1 items-end"
                       >
                         <div
                           className="animate-bar-grow w-full rounded-t-[4px] transition-[height,background-color,opacity] duration-200 ease-out"
@@ -340,11 +420,12 @@ export function PropAnalysis({
                     the top so it never has to overflow the plot, and clamped
                     left/right so edge bars don't push it off the chart. */}
                 {hovered !== null &&
-                  hovered < windowGames.length &&
+                  hovered < visibleGames.length &&
                   (() => {
-                    const game = windowGames[hovered];
+                    const game = visibleGames[hovered];
                     const isOver = game.value > altLine;
-                    const leftPct = ((hovered + 0.5) / windowGames.length) * 100;
+                    const leftPct =
+                      ((hovered + 0.5) / visibleGames.length) * 100;
                     const transform =
                       leftPct < 20
                         ? 'translateX(0)'
@@ -363,7 +444,7 @@ export function PropAnalysis({
                             {game.opponentAbbreviation}
                           </span>
                           <span className="tabular text-xs text-slate-500">
-                            {formatTooltipDate(game.date)}
+                            {formatChartAxisDate(game.date, true)}
                           </span>
                         </div>
                         <ul className="mt-2.5 flex flex-col gap-2 text-sm">
@@ -416,20 +497,31 @@ export function PropAnalysis({
             <div className="mt-2 flex gap-3">
               <div className="w-9 shrink-0" />
               <div className="flex flex-1 gap-1.5">
-                {windowGames.map((game, index) => (
-                  <div
-                    key={`${game.gameId}-${index}-label`}
-                    className="min-w-[24px] flex-1 text-center"
-                  >
-                    <div className="text-[10px] font-semibold text-slate-400">
-                      {game.isHome ? '' : '@'}
-                      {game.opponentAbbreviation}
+                {visibleGames.map((game, index) => {
+                  const showLabel = shouldShowChartAxisLabel(
+                    index,
+                    visibleGames.length
+                  );
+
+                  return (
+                    <div
+                      key={`${game.gameId}-${index}-label`}
+                      className="min-w-0 flex-1 text-center"
+                    >
+                    {showLabel ? (
+                      <>
+                        <div className="text-[10px] font-semibold text-slate-400">
+                          {game.isHome ? '' : '@'}
+                          {game.opponentAbbreviation}
+                        </div>
+                        <div className="tabular text-[10px] text-slate-600">
+                          {formatChartAxisDate(game.date, includeYearOnAxis)}
+                        </div>
+                      </>
+                    ) : null}
                     </div>
-                    <div className="tabular text-[10px] text-slate-600">
-                      {formatChartDate(game.date)}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>

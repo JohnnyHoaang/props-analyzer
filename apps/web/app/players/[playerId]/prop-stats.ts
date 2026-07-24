@@ -84,3 +84,118 @@ export function windowOptions(total: number): number[] {
   }
   return stops.length > 0 ? stops : [total].filter((n) => n > 0);
 }
+
+/** Parse a game ISO timestamp using its calendar date only (UTC) so a
+ * midnight-Z suffix doesn't shift the label into the prior local day. */
+export function parseGameDate(iso: string): {
+  year: number;
+  month: number;
+  day: number;
+} {
+  const datePart = iso.slice(0, 10);
+  const [year, month, day] = datePart.split('-').map(Number);
+  return { year, month, day };
+}
+
+export function gamesSpanMultipleYears(games: PropGameDto[]): boolean {
+  if (games.length === 0) {
+    return false;
+  }
+
+  const years = new Set(games.map((game) => parseGameDate(game.date).year));
+  return years.size > 1;
+}
+
+/** Compact x-axis label for a game date. Include the year when the visible
+ * window crosses seasons so repeated M/D pairs stay unambiguous. */
+export function formatChartAxisDate(
+  iso: string,
+  includeYear: boolean
+): string {
+  const { year, month, day } = parseGameDate(iso);
+
+  if (includeYear) {
+    const yy = String(year).slice(-2);
+    return `${month}/${day}/${yy}`;
+  }
+
+  return `${month}/${day}`;
+}
+
+/** When a window has many games, render a sparse set of x-axis ticks so
+ * dates stay readable and aligned with their bars. Always includes the
+ * first and last game in the window. */
+export function chartAxisLabelIndices(count: number): number[] {
+  if (count <= 0) {
+    return [];
+  }
+
+  if (count <= 20) {
+    return Array.from({ length: count }, (_, index) => index);
+  }
+
+  const maxLabels = 12;
+  const indices = new Set<number>([0, count - 1]);
+  const step = (count - 1) / (maxLabels - 1);
+
+  for (let tick = 1; tick < maxLabels - 1; tick++) {
+    indices.add(Math.round(tick * step));
+  }
+
+  return [...indices].sort((a, b) => a - b);
+}
+
+export function shouldShowChartAxisLabel(
+  index: number,
+  count: number
+): boolean {
+  return chartAxisLabelIndices(count).includes(index);
+}
+
+/** Max games shown per chart page — keeps bars readable without horizontal
+ * scroll so hover tooltips stay aligned with their columns. */
+export const CHART_GAMES_PER_PAGE = 20;
+
+export function chartPageCount(
+  gameCount: number,
+  pageSize = CHART_GAMES_PER_PAGE
+): number {
+  if (gameCount <= 0) {
+    return 0;
+  }
+
+  return Math.ceil(gameCount / pageSize);
+}
+
+/** Slice a chronological game series into a fixed-size page. Page 0 is the
+ * oldest chunk; the last page is the most recent games. */
+export function chartPageSlice<T>(
+  items: T[],
+  pageIndex: number,
+  pageSize = CHART_GAMES_PER_PAGE
+): T[] {
+  const start = pageIndex * pageSize;
+  return items.slice(start, start + pageSize);
+}
+
+/** Land on the most recent page when a window loads or the timeframe changes. */
+export function defaultChartPageIndex(
+  gameCount: number,
+  pageSize = CHART_GAMES_PER_PAGE
+): number {
+  return Math.max(0, chartPageCount(gameCount, pageSize) - 1);
+}
+
+export function formatChartPageRange(
+  pageIndex: number,
+  totalInWindow: number,
+  pageSize = CHART_GAMES_PER_PAGE
+): string {
+  if (totalInWindow <= 0) {
+    return '';
+  }
+
+  const start = pageIndex * pageSize + 1;
+  const end = Math.min((pageIndex + 1) * pageSize, totalInWindow);
+  return `Games ${start}–${end} of ${totalInWindow}`;
+}

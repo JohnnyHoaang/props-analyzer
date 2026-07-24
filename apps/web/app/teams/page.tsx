@@ -9,25 +9,20 @@ export const dynamic = 'force-dynamic';
 
 const CONFERENCE_ORDER: Conference[] = ['EASTERN', 'WESTERN'];
 
-function TeamRow({ team }: { team: TeamDto }) {
+function TeamCard({ team }: { team: TeamDto }) {
   return (
-    <tr className="border-b border-line-800 transition-colors last:border-0 hover:bg-ink-750">
-      <td className="px-4 py-3">
-        <Link
-          href={`/teams/${team.id}`}
-          className="font-semibold text-azure-400 hover:text-azure-300"
-        >
-          {team.name}
-        </Link>
-      </td>
-      <td className="px-4 py-3">
-        <span className="rounded-md bg-ink-700 px-2 py-0.5 text-xs font-bold tracking-wide text-slate-300">
-          {team.abbreviation}
-        </span>
-      </td>
-      <td className="px-4 py-3 text-slate-400">{formatConference(team.conference)}</td>
-      <td className="px-4 py-3 text-slate-400">{team.division}</td>
-    </tr>
+    <Link
+      href={`/teams/${team.id}`}
+      className="group flex aspect-square flex-col items-center justify-center gap-2 rounded-xl border border-line-800 bg-ink-800 p-4 text-center transition-colors hover:border-azure-400/40 hover:bg-ink-750"
+    >
+      <span className="font-display text-3xl font-extrabold tracking-tight text-white transition-colors group-hover:text-azure-300">
+        {team.abbreviation}
+      </span>
+      <span className="line-clamp-2 text-sm font-semibold leading-snug text-slate-300">
+        {team.name}
+      </span>
+      <span className="text-xs text-slate-500">{team.division}</span>
+    </Link>
   );
 }
 
@@ -67,22 +62,10 @@ export default async function TeamsPage() {
             <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500">
               {formatConference(conference)} Conference
             </h2>
-            <div className="overflow-hidden rounded-xl border border-line-800 bg-ink-800">
-              <table className="w-full text-left text-sm">
-                <thead className="border-b border-line-800 text-xs font-bold uppercase tracking-widest text-slate-500">
-                  <tr>
-                    <th className="px-4 py-3">Team</th>
-                    <th className="px-4 py-3">Abbr</th>
-                    <th className="px-4 py-3">Conference</th>
-                    <th className="px-4 py-3">Division</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {conferenceTeams.map((team) => (
-                    <TeamRow key={team.id} team={team} />
-                  ))}
-                </tbody>
-              </table>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+              {conferenceTeams.map((team) => (
+                <TeamCard key={team.id} team={team} />
+              ))}
             </div>
           </section>
         ))
