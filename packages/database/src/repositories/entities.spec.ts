@@ -34,6 +34,7 @@ describe('row -> entity mappers', () => {
       height: 73,
       weight: 164,
       active: true,
+      image_url: null,
       created_at: ts,
       updated_at: ts,
     });

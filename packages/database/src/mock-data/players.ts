@@ -6,6 +6,7 @@ export interface PlayerFixture {
   height: number; // inches
   weight: number; // pounds
   active: boolean;
+  imageUrl?: string | null;
 }
 
 /**

@@ -1,0 +1,10 @@
+{
+  "name": "@props-analyzer/worker",
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "assign-player-images": "node assign-player-images.mjs",
+    "assign-player-images:local": "PLAYERS_API_URL=http://localhost:3333/api/players node assign-player-images.mjs",
+    "import-player-images": "node import-player-images.mjs"
+  }
+}

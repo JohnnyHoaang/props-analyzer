@@ -9,6 +9,8 @@ export interface PlayerDto {
   height: number; // inches
   weight: number; // pounds
   active: boolean;
+  /** ESPN headshot URL, or null when no ESPN match exists. */
+  imageUrl: string | null;
   createdAt: string;
   updatedAt: string;
 }

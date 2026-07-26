@@ -38,6 +38,7 @@ export function toPlayerEntity(row: Rows['players']['Row']): Player {
     height: row.height,
     weight: row.weight,
     active: row.active,
+    imageUrl: row.image_url ?? null,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
   };
