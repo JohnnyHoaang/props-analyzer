@@ -4,6 +4,7 @@ import type { PlayerPosition, PlayerWithTeamDto, TeamDto } from '@props-analyzer
 import { ErrorState } from '../components/error-state';
 import { describeApiError } from '../lib/errors';
 import { formatHeight, formatPosition, formatWeight } from '../lib/format';
+import { PlayerAvatar } from '../components/player-avatar';
 import { PlayerFilters } from './player-filters';
 import { PlayerPagination } from './player-pagination';
 
@@ -25,11 +26,11 @@ function PlayerRow({ player }: { player: PlayerWithTeamDto }) {
   return (
     <tr className="border-b border-line-800 transition-colors last:border-0 hover:bg-ink-750">
       <td className="px-4 py-3">
-        <Link
-          href={`/players/${player.id}`}
-          className="font-semibold text-azure-400 hover:text-azure-300"
-        >
-          {player.fullName}
+        <Link href={`/players/${player.id}`} className="flex items-center gap-3">
+          <PlayerAvatar name={player.fullName} imageUrl={player.imageUrl} size="sm" />
+          <span className="font-semibold text-azure-400 hover:text-azure-300">
+            {player.fullName}
+          </span>
         </Link>
       </td>
       <td className="px-4 py-3">

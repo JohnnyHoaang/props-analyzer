@@ -5,6 +5,7 @@
   "scripts": {
     "assign-player-images": "node assign-player-images.mjs",
     "assign-player-images:local": "PLAYERS_API_URL=http://localhost:3333/api/players node assign-player-images.mjs",
-    "import-player-images": "node import-player-images.mjs"
+    "import-player-images": "node import-player-images.mjs",
+    "upload-images-s3": "node upload-images-to-s3.mjs"
   }
 }

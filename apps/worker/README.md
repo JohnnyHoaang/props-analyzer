@@ -65,26 +65,76 @@ Adjust the `w` / `h` query params for other sizes.
 ## Loading the CSV into the database
 
 The `players.image_url` column is added by the migration
-`supabase/migrations/20260725120000_add_player_image_url.sql`, and
-`import-player-images.mjs` backfills it from the CSV.
+`supabase/migrations/20260725120000_add_player_image_url.sql`.
+
+### Option 1: Store ESPN URLs directly (Fast)
 
 ```bash
-# 1. Apply the migration (creates players.image_url). Needs DB credentials:
+# 1. Apply the migration (creates players.image_url)
 pnpm exec supabase db push
-#    ...or run its single ALTER TABLE in the Supabase SQL editor.
 
-# 2. Backfill image_url from the CSV (idempotent; uses SUPABASE_URL +
-#    SUPABASE_SECRET_KEY from the repo-root .env, no DB password needed):
+# 2. Backfill image_url from the CSV (idempotent)
 pnpm run import-player-images
 ```
 
-The importer PATCHes each `player_id` via the Supabase data API, so it is safe
-to re-run after regenerating the CSV.
+This stores the original ESPN URLs in the database. The importer PATCHes each
+`player_id` via the Supabase data API and is safe to re-run.
+
+### Option 2: Upload images to Supabase S3 (Recommended)
+
+If you want to self-host images and avoid relying on ESPN's URL permanence:
+
+```bash
+# 1. Apply the migration
+pnpm exec supabase db push
+
+# 2. Create the "nba-assets" bucket in Supabase Storage (if not already created)
+#    - Go to Supabase Dashboard → Storage
+#    - Click "Create a new bucket" and name it "nba-assets"
+#    - Make it public if you want unauthenticated access
+
+# 3. Upload images to S3 and update the database (idempotent)
+pnpm run upload-images-s3
+```
+
+This script:
+- Downloads each image from ESPN
+- Uploads it to your Supabase S3 bucket (`nba-assets`)
+- Updates the database with the new S3 URL
+- Logs progress and any failures
+
+**Prerequisites:**
+- `SUPABASE_URL` and `SUPABASE_SECRET_KEY` in `.env`
+- `nba-assets` bucket created in Supabase Storage (can be private or public)
 
 ## Troubleshooting
+
+### General
 
 - **No players found** — confirm `PLAYERS_API_URL` is reachable and the API is
   serving real players (`DATA_SOURCE=supabase`, not the fictional mock data,
   which won't match ESPN).
 - **Low match rate** — inspect `unmatched-players.json`; ESPN may spell a name
   differently. Extend the normalization or add manual overrides as needed.
+
+### Image Upload (Option 2)
+
+**Error: "DB update failed: 400"**
+- Ensure the migration has been applied: `pnpm exec supabase db push`
+- Check that the `players.image_url` column exists in the database
+- Verify player IDs in the CSV match those in your database
+- Ensure `SUPABASE_URL` and `SUPABASE_SECRET_KEY` are correct in `.env`
+
+**Error: "Upload failed: 401"**
+- Check that `SUPABASE_SECRET_KEY` is valid
+- Verify the bucket `nba-assets` exists in Supabase Storage
+- Ensure your Supabase service role key has storage permissions
+
+**Error: "HTTP 404" when downloading images**
+- Some ESPN headshot URLs may have expired
+- The script logs these failures and continues with other players
+
+**Slow uploads?**
+- The script uses `CONCURRENCY = 4` to limit concurrent uploads
+- Adjust this value in `upload-images-to-s3.mjs` if needed
+- Network bandwidth is usually the bottleneck, not the script

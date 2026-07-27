@@ -269,6 +269,8 @@ importers:
         specifier: ^4.3.3
         version: 4.3.3
 
+  apps/worker: {}
+
   packages/api-client:
     dependencies:
       '@props-analyzer/shared-types':
