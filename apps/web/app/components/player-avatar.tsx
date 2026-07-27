@@ -16,6 +16,7 @@ const sizeClasses = {
 
 export function PlayerAvatar({ name, imageUrl, size = 'md' }: PlayerAvatarProps) {
   const [imageError, setImageError] = useState(false);
+
   const initials = name
     .split(' ')
     .map((part) => part.charAt(0))
