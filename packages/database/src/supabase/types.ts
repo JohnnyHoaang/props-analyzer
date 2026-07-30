@@ -208,6 +208,7 @@ export type Database = {
           rebounds: number
           starter: boolean
           steals: number
+          team_id: string | null
           three_pa: number
           three_pm: number
           turnovers: number
@@ -231,6 +232,7 @@ export type Database = {
           rebounds: number
           starter?: boolean
           steals: number
+          team_id?: string | null
           three_pa: number
           three_pm: number
           turnovers: number
@@ -254,6 +256,7 @@ export type Database = {
           rebounds?: number
           starter?: boolean
           steals?: number
+          team_id?: string | null
           three_pa?: number
           three_pm?: number
           turnovers?: number
@@ -265,6 +268,13 @@ export type Database = {
             columns: ["game_id"]
             isOneToOne: false
             referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_game_stats_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
           {

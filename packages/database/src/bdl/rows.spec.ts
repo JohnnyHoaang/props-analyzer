@@ -89,6 +89,7 @@ describe('bdl row mappers (fixture -> snake_case Supabase Insert rows)', () => {
     expect(
       statRow({
         playerId: '10',
+        teamId: '5',
         gameId: '100',
         minutes: 34,
         points: 30,
@@ -110,6 +111,7 @@ describe('bdl row mappers (fixture -> snake_case Supabase Insert rows)', () => {
     ).toEqual({
       id: '10-100',
       player_id: '10',
+      team_id: '5',
       game_id: '100',
       minutes: 34,
       points: 30,

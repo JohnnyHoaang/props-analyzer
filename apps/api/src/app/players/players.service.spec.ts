@@ -42,6 +42,7 @@ describe('PlayersService', () => {
   const mockStat = {
     id: 'stat-1',
     playerId: 'player-cascade-1',
+    teamId: 'team-cascade',
     gameId: 'game-001',
     minutes: 32,
     points: 20,
@@ -163,6 +164,37 @@ describe('PlayersService', () => {
       expect(entry.isHome).toBe(true);
       expect(entry.opponentTeamId).toBe('team-meridian');
     });
+
+    it('classifies by the team the player played for, not their current team', async () => {
+      // Player now on team-cascade, but this game was played for team-meridian
+      // (a trade / free-agent move). team-cascade hosted, so from the player's
+      // actual team that game it was an away game — not home.
+      repos.player.findById.mockResolvedValue(mockPlayer);
+      repos.playerGameStat.listByPlayerWithGame.mockResolvedValue([
+        { ...mockStat, teamId: 'team-meridian' },
+      ]);
+
+      const [entry] = await service.findGameLog('player-cascade-1', {
+        limit: 10,
+      });
+
+      expect(entry.isHome).toBe(false);
+      expect(entry.opponentTeamId).toBe('team-cascade');
+    });
+
+    it('falls back to the current team when the stat has no per-game team', async () => {
+      repos.player.findById.mockResolvedValue(mockPlayer);
+      repos.playerGameStat.listByPlayerWithGame.mockResolvedValue([
+        { ...mockStat, teamId: null },
+      ]);
+
+      const [entry] = await service.findGameLog('player-cascade-1', {
+        limit: 10,
+      });
+
+      expect(entry.isHome).toBe(true);
+      expect(entry.opponentTeamId).toBe('team-meridian');
+    });
   });
 
   describe('findProps', () => {
@@ -214,6 +246,46 @@ describe('PlayersService', () => {
       expect(prop.games[0].isHome).toBe(true);
       // Home team won 108-101 → +7 margin from the player's perspective.
       expect(prop.games[0].margin).toBe(7);
+    });
+
+    it('uses the per-game team so a traded player keeps correct home/away and margin', async () => {
+      repos.player.findById.mockResolvedValue(mockPlayer);
+      repos.propLine.listByPlayer.mockResolvedValue([
+        {
+          id: 'prop-1',
+          playerId: 'player-cascade-1',
+          statType: 'POINTS',
+          line: 19.5,
+          overOdds: -110,
+          underOdds: -110,
+          projection: 20,
+          createdAt: now,
+          updatedAt: now,
+        },
+      ]);
+      // Same game (team-cascade hosted, won 108-101), but the player suited up
+      // for the visiting team-meridian that night.
+      repos.playerGameStat.listByPlayerWithGame.mockResolvedValue([
+        { ...mockStat, teamId: 'team-meridian', game: mockGame },
+      ]);
+      repos.team.list.mockResolvedValue([
+        {
+          id: 'team-cascade',
+          abbreviation: 'CAS',
+          name: 'Cascade Ironhawks',
+          conference: 'WESTERN',
+          division: 'Pacific',
+          createdAt: now,
+          updatedAt: now,
+        },
+      ]);
+
+      const [prop] = await service.findProps('player-cascade-1');
+
+      expect(prop.games[0].isHome).toBe(false);
+      expect(prop.games[0].opponentAbbreviation).toBe('CAS');
+      // From team-meridian's perspective they lost 101-108 → -7 margin.
+      expect(prop.games[0].margin).toBe(-7);
     });
   });
 });

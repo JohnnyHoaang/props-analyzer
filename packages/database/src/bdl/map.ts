@@ -182,6 +182,7 @@ export function mapGame(game: BdlGame, seasonId: string): GameFixture {
 export function mapStat(stat: BdlStat): PlayerGameStatFixture {
   return {
     playerId: playerId(stat.player.id),
+    teamId: teamId(stat.team.id),
     gameId: String(stat.game.id),
     minutes: parseMinutes(stat.min),
     points: stat.pts,

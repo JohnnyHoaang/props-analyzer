@@ -66,6 +66,7 @@ export function toPlayerGameStatEntity(
   return {
     id: row.id,
     playerId: row.player_id,
+    teamId: row.team_id,
     gameId: row.game_id,
     minutes: row.minutes,
     points: row.points,

@@ -72,6 +72,7 @@ export function statRow(stat: PlayerGameStatFixture): PlayerGameStatRow {
     // constraint is what upsert conflicts on.
     id: `${stat.playerId}-${stat.gameId}`,
     player_id: stat.playerId,
+    team_id: stat.teamId,
     game_id: stat.gameId,
     minutes: stat.minutes,
     points: stat.points,
