@@ -23,10 +23,10 @@ export function PlayerRow({ player }: { player: PlayerWithTeamDto }) {
               src={player.imageUrl}
               alt={player.fullName}
               onError={() => setImageError(true)}
-              className="h-8 w-8 rounded-full object-cover"
+              className="h-8 w-8 shrink-0 rounded-full object-cover"
             />
           ) : (
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-ink-700 text-xs font-bold text-slate-400">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ink-700 text-xs font-bold text-slate-400">
               {initials}
             </div>
           )}
