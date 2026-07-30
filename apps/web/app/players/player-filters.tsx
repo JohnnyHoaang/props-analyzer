@@ -82,7 +82,7 @@ export function PlayerFilters({
           defaultChecked={value.active === 'true'}
           className="h-4 w-4 rounded border-line-700 bg-ink-750 accent-azure-500"
         />
-        Active only
+        Active players only
       </label>
 
       <button

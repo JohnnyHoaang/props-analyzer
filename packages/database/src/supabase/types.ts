@@ -293,6 +293,7 @@ export type Database = {
           full_name: string
           height: number
           id: string
+          image_url: string | null
           position: Database["public"]["Enums"]["player_position"]
           team_id: string
           updated_at: string
@@ -304,6 +305,7 @@ export type Database = {
           full_name: string
           height: number
           id: string
+          image_url?: string | null
           position: Database["public"]["Enums"]["player_position"]
           team_id: string
           updated_at?: string
@@ -315,6 +317,7 @@ export type Database = {
           full_name?: string
           height?: number
           id?: string
+          image_url?: string | null
           position?: Database["public"]["Enums"]["player_position"]
           team_id?: string
           updated_at?: string

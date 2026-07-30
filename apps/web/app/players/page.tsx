@@ -1,11 +1,10 @@
-import Link from 'next/link';
 import { listPlayers, listTeams } from '@props-analyzer/api-client';
 import type { PlayerPosition, PlayerWithTeamDto, TeamDto } from '@props-analyzer/shared-types';
 import { ErrorState } from '../components/error-state';
 import { describeApiError } from '../lib/errors';
-import { formatHeight, formatPosition, formatWeight } from '../lib/format';
 import { PlayerFilters } from './player-filters';
 import { PlayerPagination } from './player-pagination';
+import { PlayerRow } from './player-row';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,43 +18,6 @@ interface PlayersPageProps {
     search?: string;
     page?: string;
   }>;
-}
-
-function PlayerRow({ player }: { player: PlayerWithTeamDto }) {
-  return (
-    <tr className="border-b border-line-800 transition-colors last:border-0 hover:bg-ink-750">
-      <td className="px-4 py-3">
-        <Link
-          href={`/players/${player.id}`}
-          className="font-semibold text-azure-400 hover:text-azure-300"
-        >
-          {player.fullName}
-        </Link>
-      </td>
-      <td className="px-4 py-3">
-        <Link
-          href={`/teams/${player.team.id}`}
-          className="rounded-md bg-ink-700 px-2 py-0.5 text-xs font-bold tracking-wide text-slate-300 transition-colors hover:text-white"
-        >
-          {player.team.abbreviation}
-        </Link>
-      </td>
-      <td className="px-4 py-3 text-slate-400">{formatPosition(player.position)}</td>
-      <td className="tabular px-4 py-3 text-slate-400">{formatHeight(player.height)}</td>
-      <td className="tabular px-4 py-3 text-slate-400">{formatWeight(player.weight)}</td>
-      <td className="px-4 py-3">
-        {player.active ? (
-          <span className="rounded-full bg-mint-500/15 px-2.5 py-0.5 text-xs font-semibold text-mint-400">
-            Active
-          </span>
-        ) : (
-          <span className="rounded-full bg-ink-700 px-2.5 py-0.5 text-xs font-semibold text-slate-500">
-            Inactive
-          </span>
-        )}
-      </td>
-    </tr>
-  );
 }
 
 export default async function PlayersPage({ searchParams }: PlayersPageProps) {

@@ -37,6 +37,8 @@ export interface Player {
   height: number;
   weight: number;
   active: boolean;
+  /** ESPN headshot URL, or null when no ESPN match exists. */
+  imageUrl: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

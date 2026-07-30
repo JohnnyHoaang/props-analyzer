@@ -25,6 +25,7 @@ describe('PlayersService', () => {
     height: 74,
     weight: 190,
     active: true,
+    imageUrl: null,
     createdAt: now,
     updatedAt: now,
     team: mockTeam,

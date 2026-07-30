@@ -26,6 +26,7 @@ export function toPlayerDto(player: Player): PlayerDto {
     height: player.height,
     weight: player.weight,
     active: player.active,
+    imageUrl: player.imageUrl,
     createdAt: player.createdAt.toISOString(),
     updatedAt: player.updatedAt.toISOString(),
   };

@@ -83,13 +83,21 @@ export default async function PlayerDetailPage({
           style={{ clipPath: 'polygon(0 0, 85% 0, 60% 100%, 0 100%)' }}
         />
         <div className="relative flex flex-wrap items-center gap-4 px-5 py-6 sm:gap-6 sm:px-8 sm:py-8">
-          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-4 border-ink-800 bg-ink-900 font-display text-2xl font-extrabold text-white shadow-lg sm:h-28 sm:w-28 sm:text-3xl">
-            {player.fullName
-              .split(' ')
-              .map((part) => part.charAt(0))
-              .join('')
-              .slice(0, 2)}
-          </div>
+          {player.imageUrl ? (
+            <img
+              src={player.imageUrl}
+              alt={player.fullName}
+              className="h-20 w-20 shrink-0 rounded-full border-4 border-ink-800 object-cover shadow-lg sm:h-28 sm:w-28"
+            />
+          ) : (
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-4 border-ink-800 bg-ink-900 font-display text-2xl font-extrabold text-white shadow-lg sm:h-28 sm:w-28 sm:text-3xl">
+              {player.fullName
+                .split(' ')
+                .map((part) => part.charAt(0))
+                .join('')
+                .slice(0, 2)}
+            </div>
+          )}
           <div className="flex flex-col gap-2">
             <span className="text-xs font-bold uppercase tracking-widest text-slate-500">
               Player Profile

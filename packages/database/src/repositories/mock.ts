@@ -45,7 +45,10 @@ function buildStore(data: MockDataFile): Store {
   const teams = data.teams.map((team) => withTimestamps(team) as Team);
   const teamsById = new Map(teams.map((team) => [team.id, team]));
 
-  const players = data.players.map((player) => withTimestamps(player) as Player);
+  const players = data.players.map(
+    (player) =>
+      withTimestamps({ imageUrl: null, ...player }) as Player
+  );
   const playersById = new Map(players.map((player) => [player.id, player]));
 
   const games = data.games.map(
