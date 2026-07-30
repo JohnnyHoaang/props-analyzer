@@ -68,6 +68,12 @@ export interface Game {
 export interface PlayerGameStat {
   id: string;
   playerId: string;
+  /**
+   * Team the player suited up for in this game. Null on rows loaded before the
+   * per-game team was recorded (see the backfill script); consumers fall back
+   * to the player's current team in that case.
+   */
+  teamId: string | null;
   gameId: string;
   minutes: number;
   points: number;

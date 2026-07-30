@@ -4,6 +4,8 @@ import { hashString, mulberry32, randInt } from './random.js';
 
 export interface PlayerGameStatFixture {
   playerId: string;
+  /** Team the player suited up for in this game (mock players never move). */
+  teamId: string;
   gameId: string;
   minutes: number;
   points: number;
@@ -163,6 +165,7 @@ function generateStatLine(
 
   return {
     playerId: player.id,
+    teamId: player.teamId,
     gameId,
     minutes,
     points,

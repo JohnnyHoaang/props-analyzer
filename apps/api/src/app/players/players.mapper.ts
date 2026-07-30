@@ -68,16 +68,17 @@ function toPlayerGameStatDto(stat: PlayerGameStat) {
 
 /**
  * `isHome`/`opponentTeamId` depend on which team the player was on for that
- * game, so the caller passes `playerTeamId` explicitly rather than this
- * mapper re-deriving it (a game row alone doesn't say which side the player
- * was on).
+ * game. That's `stat.teamId` (the team the player actually suited up for),
+ * which matters for traded/free-agent players whose current team differs from
+ * their team in a past game. `playerTeamId` is a fallback for legacy rows whose
+ * per-game team predates the column and is still null.
  */
 export function toPlayerGameLogEntryDto(
   stat: PlayerGameStat & { game: Game },
   playerTeamId: string
 ): PlayerGameLogEntryDto {
   const { game } = stat;
-  const isHome = game.homeTeamId === playerTeamId;
+  const isHome = game.homeTeamId === (stat.teamId ?? playerTeamId);
 
   return {
     ...toPlayerGameStatDto(stat),

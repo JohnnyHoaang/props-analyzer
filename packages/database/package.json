@@ -41,6 +41,7 @@
     "db:export-mock-data": "tsx scripts/export-mock-data.ts",
     "db:load-bdl": "tsx scripts/load-bdl-data.ts",
     "db:add-missing-players": "tsx scripts/add-missing-players.ts",
+    "db:backfill-stat-teams": "tsx scripts/backfill-stat-teams.ts",
     "db:seed-fake-props": "tsx scripts/seed-fake-props.ts",
     "db:gen-types": "supabase gen types typescript --local > src/supabase/types.ts",
     "db:migrate:up": "supabase db push",

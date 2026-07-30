@@ -90,7 +90,11 @@ export class PlayersService {
     );
 
     const games: PropGameContext[] = stats.map((stat) => {
-      const isHome = stat.game.homeTeamId === player.teamId;
+      // The team the player suited up for that game (falls back to the player's
+      // current team for legacy rows without a per-game team) — so a traded or
+      // free-agent player's old-team games aren't all flipped to "away".
+      const statTeamId = stat.teamId ?? player.teamId;
+      const isHome = stat.game.homeTeamId === statTeamId;
       const opponentTeamId = isHome
         ? stat.game.awayTeamId
         : stat.game.homeTeamId;

@@ -281,6 +281,7 @@ describe('bdl mappers', () => {
     it('maps every box-score field with raw-id keys', () => {
       expect(mapStat(stat)).toEqual({
         playerId: '246',
+        teamId: '2',
         gameId: '18001',
         minutes: 34,
         points: 28,
@@ -303,6 +304,12 @@ describe('bdl mappers', () => {
 
     it('defaults a null plus_minus to 0', () => {
       expect(mapStat({ ...stat, plus_minus: null }).plusMinus).toBe(0);
+    });
+
+    it('records the team the player suited up for, not the game', () => {
+      // team.id here is the player's team for this game — the field that lets
+      // home/away survive a trade or free-agent move.
+      expect(mapStat({ ...stat, team: { id: 14 } }).teamId).toBe('14');
     });
   });
 });
