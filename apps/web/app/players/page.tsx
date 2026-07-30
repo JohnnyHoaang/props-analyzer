@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { listPlayers, listTeams } from '@props-analyzer/api-client';
 import type { PlayerPosition, PlayerWithTeamDto, TeamDto } from '@props-analyzer/shared-types';
 import { ErrorState } from '../components/error-state';
